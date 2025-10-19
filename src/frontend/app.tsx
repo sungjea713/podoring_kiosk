@@ -92,8 +92,45 @@ function App() {
       {/* Content */}
       <div className="relative z-10">
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-          <div className="bg-gradient-radial-header absolute inset-0" />
+        <header className="fixed top-0 left-0 right-0 z-50 shadow-[0_4px_20px_rgba(0,0,0,0.5)] overflow-hidden">
+          {/* 앰비언트 그라데이션 배경 */}
+          <div
+            className="absolute inset-0 ambient-header-bg"
+          />
+          <style>{`
+            .ambient-header-bg {
+              background: radial-gradient(ellipse at center, #3d2618 0%, #2F161A 50%, #1C0E10 100%);
+              animation: headerAmbient 120s ease-in-out infinite;
+            }
+            @keyframes headerAmbient {
+              0% { filter: hue-rotate(0deg) brightness(1); }
+              4% { filter: hue-rotate(15deg) brightness(0.95); }
+              8% { filter: hue-rotate(-30deg) brightness(1.05); }
+              12% { filter: hue-rotate(200deg) brightness(1.1); }
+              16% { filter: hue-rotate(45deg) brightness(0.92); }
+              20% { filter: hue-rotate(-50deg) brightness(1.08); }
+              24% { filter: hue-rotate(230deg) brightness(0.98); }
+              28% { filter: hue-rotate(80deg) brightness(1.12); }
+              32% { filter: hue-rotate(-40deg) brightness(0.88); }
+              36% { filter: hue-rotate(100deg) brightness(1.06); }
+              40% { filter: hue-rotate(250deg) brightness(1.02); }
+              44% { filter: hue-rotate(-25deg) brightness(0.95); }
+              48% { filter: hue-rotate(120deg) brightness(1.1); }
+              52% { filter: hue-rotate(-60deg) brightness(0.9); }
+              56% { filter: hue-rotate(270deg) brightness(1.15); }
+              60% { filter: hue-rotate(60deg) brightness(0.94); }
+              64% { filter: hue-rotate(-70deg) brightness(1.08); }
+              68% { filter: hue-rotate(140deg) brightness(1.05); }
+              72% { filter: hue-rotate(290deg) brightness(0.96); }
+              76% { filter: hue-rotate(-35deg) brightness(1.12); }
+              80% { filter: hue-rotate(160deg) brightness(0.92); }
+              84% { filter: hue-rotate(30deg) brightness(1.06); }
+              88% { filter: hue-rotate(240deg) brightness(1.04); }
+              92% { filter: hue-rotate(-45deg) brightness(0.98); }
+              96% { filter: hue-rotate(180deg) brightness(1.1); }
+              100% { filter: hue-rotate(0deg) brightness(1); }
+            }
+          `}</style>
           <div className="noise-overlay-header absolute inset-0" />
           {/* 그라데이션 하단 선 */}
           <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{
@@ -110,9 +147,13 @@ function App() {
                   className="h-16 w-auto object-contain"
                 />
               </div>
-              <h1 className="header-title-font text-header-text mb-1 text-6xl">
-                FINE WINE SELECTION
-              </h1>
+              <div className="flex justify-center mb-1">
+                <img
+                  src="/img/FineWineSelection.png"
+                  alt="Fine Wine Selection"
+                  className="h-16 w-auto object-contain"
+                />
+              </div>
               <p className="header-subtitle-font text-sub-text text-lg">
                 Our finest choice, Affordable
               </p>
