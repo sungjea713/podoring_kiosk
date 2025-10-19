@@ -46,24 +46,38 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-8"
+      style={{ backdropFilter: 'blur(10px)', backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+      onClick={onClose}
+    >
       <div
-        className="bg-gradient-to-br from-[#f5ebe0] to-[#e8dcc8] rounded-2xl shadow-2xl overflow-hidden"
-        style={{ width: '900px', height: '1600px' }}
+        className="rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md"
+        style={{
+          width: '900px',
+          maxHeight: 'calc(100vh - 64px)',
+          background: 'linear-gradient(135deg, rgba(245, 235, 224, 0.75) 0%, rgba(232, 220, 200, 0.75) 50%, rgba(225, 210, 190, 0.75) 100%)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="relative bg-gradient-to-r from-[#8b3a3a] to-[#6b2a2a] text-white p-8">
-          <h2 className="text-4xl font-bold text-center font-bodoni">Wine Cart</h2>
+        <div className="relative p-8">
+          <h2 className="text-4xl font-bold text-center font-bodoni text-[#3d2618]">
+            Wine Cart
+          </h2>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-3 hover:bg-white/20 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full transition-all duration-300 text-[#8b6f47] hover:text-[#3d2618] hover:bg-white/50 hover:scale-110 backdrop-blur-sm"
+            style={{
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+            }}
           >
-            <X className="w-10 h-10" />
+            <X className="w-8 h-8" strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="h-full overflow-y-auto pb-32" style={{ maxHeight: 'calc(1600px - 96px)' }}>
+        <div className="h-full overflow-y-auto pb-32" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           {/* 비교 영역 */}
           <div className="p-8 relative">
             <h3 className="text-2xl font-bold text-[#3d2618] mb-6 font-bodoni">Compare Wines</h3>

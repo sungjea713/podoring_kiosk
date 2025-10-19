@@ -92,9 +92,13 @@ function App() {
       {/* Content */}
       <div className="relative z-10">
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 border-b border-gold shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+        <header className="fixed top-0 left-0 right-0 z-50 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
           <div className="bg-gradient-radial-header absolute inset-0" />
           <div className="noise-overlay-header absolute inset-0" />
+          {/* 그라데이션 하단 선 */}
+          <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{
+            background: 'linear-gradient(to right, transparent 0%, #c4a87a 20%, #c4a87a 80%, transparent 100%)'
+          }} />
 
           <div className="max-w-[1080px] mx-auto relative z-10">
             {/* Logo */}
@@ -222,7 +226,7 @@ function App() {
                 와인이 없습니다
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-5">
+              <div className="grid grid-cols-3 gap-6">
                 {wines.map((wine) => (
                   <WineCard
                     key={wine.id}
@@ -236,7 +240,7 @@ function App() {
 
         {/* Footer - Price Range Slider */}
         {priceRange && maxPrice && (
-          <footer className="fixed bottom-0 left-0 right-0 border-t border-gold shadow-[0_-4px_20px_rgba(0,0,0,0.5)] z-40 backdrop-blur-sm" style={{ backgroundColor: 'rgba(47, 22, 26, 0.7)' }}>
+          <footer className="fixed bottom-0 left-0 right-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] z-40 backdrop-blur-sm" style={{ backgroundColor: 'rgba(47, 22, 26, 0.7)' }}>
             <div className="max-w-[1080px] mx-auto px-6 py-6">
               <div className="font-bodoni">
                 {/* Price Labels */}
