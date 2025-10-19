@@ -182,7 +182,7 @@ export default function WineDetailModal({ wine, onClose }: Props) {
               <h2 className="text-2xl font-bold text-[#3d2618] mb-3 font-bodoni">
                 Description
               </h2>
-              <p className="text-[#3d2618] text-lg leading-relaxed font-bodoni">
+              <p className="text-[#3d2618] text-base leading-relaxed font-bodoni">
                 {wine.description}
               </p>
             </div>
@@ -194,7 +194,7 @@ export default function WineDetailModal({ wine, onClose }: Props) {
               <h2 className="text-2xl font-bold text-[#3d2618] mb-3 font-bodoni">
                 Taste Notes
               </h2>
-              <p className="text-[#3d2618] text-lg leading-relaxed font-bodoni">
+              <p className="text-[#3d2618] text-base leading-relaxed font-bodoni">
                 {wine.taste}
               </p>
             </div>
