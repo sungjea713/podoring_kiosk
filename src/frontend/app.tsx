@@ -102,7 +102,7 @@ function App() {
 
           <div className="max-w-[1080px] mx-auto relative z-10">
             {/* Logo */}
-            <div className="text-center py-6 mb-6">
+            <div className="text-center py-6 mb-3">
               <div className="flex justify-center mb-3">
                 <img
                   src="/img/logo.png"
