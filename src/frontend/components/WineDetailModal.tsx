@@ -36,7 +36,7 @@ export default function WineDetailModal({ wine, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4"
       onClick={onClose}
     >
       <div
@@ -58,6 +58,11 @@ export default function WineDetailModal({ wine, onClose }: Props) {
 
         {/* Content */}
         <div className="p-8">
+          {/* Wine Title - 독립 배치 */}
+          <h1 className="text-4xl font-bold text-[#3d2618] mb-6 font-bodoni">
+            {wine.title}
+          </h1>
+
           <div className="flex gap-8 mb-8">
             {/* Wine Image - 좌측 상단 */}
             <div className="flex-shrink-0">
@@ -116,11 +121,7 @@ export default function WineDetailModal({ wine, onClose }: Props) {
 
             {/* Basic Info */}
             <div className="flex-1 font-bodoni">
-              <h1 className="text-4xl font-bold text-[#3d2618] mb-4">
-                {wine.title}
-              </h1>
-
-              <div className="space-y-3 text-lg">
+              <div className="space-y-2.5 text-base">
                 {wine.country && (
                   <div className="flex items-center gap-2 text-[#8b6f47]">
                     <span className="text-2xl">{getCountryFlag(wine.country)}</span>
@@ -167,7 +168,7 @@ export default function WineDetailModal({ wine, onClose }: Props) {
                 </div>
 
                 {wine.price && (
-                  <div className="text-[#3d2618] font-bold text-3xl mt-4">
+                  <div className="text-[#3d2618] font-bold text-3xl mt-3">
                     ₩{wine.price.toLocaleString()}
                   </div>
                 )}
@@ -177,7 +178,7 @@ export default function WineDetailModal({ wine, onClose }: Props) {
 
           {/* Description */}
           {wine.description && (
-            <div className="mb-8">
+            <div className="mb-8 mt-4">
               <h2 className="text-2xl font-bold text-[#3d2618] mb-3 font-bodoni">
                 Description
               </h2>
