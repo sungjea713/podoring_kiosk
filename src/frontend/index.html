@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <meta name="description" content="Podoring Wine Kiosk - Find Your Perfect Wine">
+  <meta name="theme-color" content="#1C0E10">
+  <title>Podoring Wine Kiosk</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="./img/favicon.png?v=10">
+  <link rel="icon" type="image/png" sizes="16x16" href="./img/favicon.png?v=10">
+  <link rel="apple-touch-icon" sizes="180x180" href="./img/favicon.png?v=10">
+  <meta name="apple-mobile-web-app-title" content="Podoring Wine">
+
+  <!-- PWA -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg-start': '#2F161A',
+            'dark-bg-end': '#1C0E10',
+            'card-bg': '#f5f0e8',
+            'dark-text': '#3d2618',
+            'light-text': '#8b6f47',
+            'header-text': '#f5f0e8',
+            'sub-text': '#a08967',
+            'gold': '#c4a87a',
+            'wine-red': '#6b2c2c',
+            'wine-red-hover': '#8b3a3a',
+            'dark-brown': '#3d2618',
+            'dark-brown-hover': '#4a3225',
+          },
+          fontFamily: {
+            'bodoni': ['Bodoni Moda', 'serif'],
+            'cormorant': ['Cormorant Garamond', 'serif'],
+            'roboto': ['Roboto', 'sans-serif'],
+            'sans': ['Cormorant Garamond', 'serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <!-- 기본 스타일 -->
+  <style>
+    body {
+      font-family: "Cormorant Garamond", serif;
+      font-optical-sizing: auto;
+    }
+
+    #root {
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Polyfill -->
+  <script src="./polyfill.js"></script>
+
+  <!-- React App -->
+  <script type="module" src="./app.tsx"></script>
+</body>
+</html>
