@@ -62,7 +62,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="relative p-8">
+        <div className="relative p-6 pb-3">
           <h2 className="text-4xl font-bold text-center font-bodoni text-[#3d2618]">
             Wine Cart
           </h2>
@@ -79,13 +79,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
         <div className="h-full overflow-y-auto pb-32" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           {/* 비교 영역 */}
-          <div className="p-8 relative">
-            <h3 className="text-2xl font-bold text-[#3d2618] mb-6 font-bodoni">Compare Wines</h3>
-
+          <div className="px-6 pt-2 pb-6 relative">
             {/* 방사형 그래프 - 두 와인이 모두 선택되었을 때만 표시 */}
             {comparisonSlots[0] && comparisonSlots[1] && (
-              <div className="absolute left-1/2 top-32 transform -translate-x-1/2 z-50 pointer-events-none">
-                <svg width="270" height="270" viewBox="0 0 300 300" className="mx-auto drop-shadow-lg">
+              <div className="absolute left-1/2 top-20 transform -translate-x-1/2 z-50 pointer-events-none">
+                <svg width="220" height="220" viewBox="0 0 300 300" className="mx-auto drop-shadow-lg">
                   {/* 방사형 그라데이션 정의 */}
                   <defs>
                     <radialGradient id="leftWineGradient" cx="50%" cy="50%" r="50%">
@@ -241,32 +239,32 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   <div
                     key={index}
                     onClick={() => wine && handleSlotClick(index as 0 | 1)}
-                    className={`relative bg-white/50 rounded-xl p-6 ${wine ? 'cursor-pointer hover:bg-white/70' : ''} transition-colors`}
-                    style={{ minHeight: '600px' }}
+                    className={`relative bg-white/50 rounded-xl p-4 ${wine ? 'cursor-pointer hover:bg-white/70' : ''} transition-colors`}
+                    style={{ minHeight: '550px' }}
                   >
                     {wine ? (
                       <div>
                         {/* 와인 이미지 */}
-                        <div className="mb-4">
+                        <div className="mb-3">
                           <img
                             src={wine.image || 'https://via.placeholder.com/200x300?text=No+Image'}
                             alt={wine.title}
-                            className="w-full h-64 object-contain mx-auto"
+                            className="w-full h-48 object-contain mx-auto"
                           />
                         </div>
 
                         {/* 가격 */}
                         {wine.price && (
-                          <div className="text-[#3d2618] font-bold text-3xl text-center mb-4 font-bodoni">
+                          <div className="text-[#3d2618] font-bold text-2xl text-center mb-2 font-bodoni">
                             ₩{wine.price.toLocaleString()}
                           </div>
                         )}
 
                         {/* Vivino 점수 */}
                         {wine.points && (
-                          <div className="flex items-center justify-center gap-2 mb-2">
+                          <div className="flex items-center justify-center gap-2 mb-1">
                             <img src="https://vectorseek.com/wp-content/uploads/2023/10/Vivino-Logo-Vector.svg-.png"
-                                 alt="Vivino" className="w-12 h-12 object-contain" />
+                                 alt="Vivino" className="w-16 h-16 object-contain" />
                             <span className="text-[#3d2618] text-lg font-roboto" style={{ fontWeight: 500 }}>
                               {wine.points.toFixed(1)}
                             </span>
@@ -275,27 +273,42 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
                         {/* 알콜 도수 */}
                         {wine.abv !== undefined && (
-                          <div className="text-base text-[#8b6f47] mb-2 text-center font-bodoni" style={{ fontWeight: 500 }}>
+                          <div className="text-sm text-[#8b6f47] mb-1 text-center font-bodoni" style={{ fontWeight: 500 }}>
                             {wine.abv}% ABV
                           </div>
                         )}
 
                         {/* 국가 */}
                         {wine.country && (
-                          <div className="text-base text-[#8b6f47] mb-2 text-center font-bodoni">
+                          <div className="text-sm text-[#8b6f47] mb-1 text-center font-bodoni">
                             {wine.country}
                           </div>
                         )}
 
                         {/* 와이너리 */}
                         {wine.winery && (
-                          <div className="text-base text-[#8b6f47] mb-6 text-center font-bodoni">
+                          <div className="text-sm text-[#8b6f47] mb-1 text-center font-bodoni">
                             {wine.winery}
                           </div>
                         )}
 
+                        {/* Location */}
+                        <div className="text-sm text-[#8b6f47] mb-3 text-center font-bodoni">
+                          <span className="font-medium">Location:</span>{' '}
+                          {wine.locations && wine.locations.length > 0 ? (
+                            wine.locations.map((loc, idx) => (
+                              <span key={idx}>
+                                {idx > 0 && ', '}
+                                {loc.shelf}/{loc.row},{loc.col}
+                              </span>
+                            ))
+                          ) : (
+                            <span>Out of Stock</span>
+                          )}
+                        </div>
+
                         {/* 와인 5대 지수 막대 */}
-                        <div className="space-y-3">
+                        <div className="space-y-1.5">
                           {wine.sweetness !== undefined && (
                             <div>
                               <div className="flex justify-between mb-1 text-sm font-bodoni">
