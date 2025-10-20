@@ -66,6 +66,10 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           const wineIds = data.wineIds as number[]
           console.log(`🍷 [SSE] Received ${wineIds.length} wine IDs:`, wineIds)
 
+          // 먼저 기존 카드를 초기화 (새 추천 시작)
+          console.log('🔄 [UI] Clearing previous wine cards...')
+          setRecommendedWines([])
+
           // Fetch wine details for each ID
           try {
             console.log('🔍 [API] Fetching wine details...')
@@ -78,7 +82,7 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
 
             const wines = await Promise.all(winePromises)
             console.log('✅ [API] Got all wine details:', wines)
-            console.log('🎨 [UI] Setting recommendedWines state...')
+            console.log('🎨 [UI] Setting new recommendedWines state...')
 
             setRecommendedWines(wines)
 
