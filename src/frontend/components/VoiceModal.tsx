@@ -150,41 +150,37 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           setIsListening(false)
           setStatus('Disconnected')
         },
-        onMessage: (message) => {
-          console.log('🎤 Agent message type:', message.type)
-          console.log('🎤 Agent message full:', message)
+        onMessage: async (message) => {
+          console.log('🎤 Agent message:', message.type, message)
 
           if (message.type === 'user_transcript') {
-            setUserMessage(message.message)
-            setStatus(`You said: "${message.message}"`)
-          } else if (message.type === 'agent_response') {
-            setStatus(`Agent: "${message.message}"`)
-          } else if (message.type === 'tool_call') {
-            // Tool 호출 중
-            console.log('🔧 Tool being called:', message)
-            setStatus('Searching for wines...')
-          } else if (message.type === 'tool_response' || message.type === 'tool_result') {
-            // Tool 응답 받음 - 와인 데이터 파싱
-            console.log('✅ Tool response received:', message)
+            const userQuery = message.message
+            setUserMessage(userQuery)
+            setStatus(`You said: "${userQuery}"`)
+
+            // 사용자 발화 감지 → 직접 와인 검색 API 호출
+            console.log('🔍 Calling wine search API with query:', userQuery)
             try {
-              // message.response 또는 message.result 체크
-              const responseData = message.response || message.result || message.output
-              console.log('📦 Raw response data:', responseData)
+              const searchResponse = await fetch('/api/search/semantic', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: userQuery, limit: 3 })
+              })
 
-              const response = typeof responseData === 'string' ? JSON.parse(responseData) : responseData
-              console.log('📋 Parsed response:', response)
+              const searchData = await searchResponse.json()
+              console.log('🍷 Wine search results:', searchData)
 
-              if (response.success && response.wines && response.wines.length > 0) {
-                console.log('🍷 Found wines:', response.wines.length)
-                setRecommendedWines(response.wines)
+              if (searchData.success && searchData.wines && searchData.wines.length > 0) {
+                setRecommendedWines(searchData.wines)
                 setStatus('Found wines! Agent is describing them...')
               } else {
-                console.warn('⚠️ No wines in response:', response)
+                console.warn('⚠️ No wines found')
               }
             } catch (error) {
-              console.error('❌ Failed to parse tool response:', error)
-              console.error('❌ Raw message:', message)
+              console.error('❌ Wine search failed:', error)
             }
+          } else if (message.type === 'agent_response') {
+            setStatus(`Agent: "${message.message}"`)
           }
         },
         onError: (error) => {
