@@ -7,6 +7,9 @@ import { supabase } from "./db/supabase"
 
 const PORT = Number(Bun.env.PORT) || 4000
 
+// SSE clients management
+const sseClients = new Set<ReadableStreamDefaultController>()
+
 Bun.serve({
   port: PORT,
 
@@ -162,6 +165,40 @@ Bun.serve({
       }
     },
 
+    // SSE endpoint for wine recommendations
+    "/api/wine-recommendations/stream": {
+      GET: async (req) => {
+        const stream = new ReadableStream({
+          start(controller) {
+            sseClients.add(controller)
+
+            // Send initial connection message
+            const encoder = new TextEncoder()
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'connected' })}\n\n`))
+
+            // Handle client disconnect
+            req.signal?.addEventListener('abort', () => {
+              sseClients.delete(controller)
+              try {
+                controller.close()
+              } catch (e) {
+                console.log('Controller already closed')
+              }
+            })
+          }
+        })
+
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+          }
+        })
+      }
+    },
+
     // Semantic search for voice assistant
     "/api/search/semantic": {
       POST: async (req) => {
@@ -213,6 +250,25 @@ Bun.serve({
           console.log(`✓ Found ${wines.length} wines:`)
           wines.forEach((wine, index) => {
             console.log(`  ${index + 1}. ${wine.title} ${wine.vintage || ''} | ${wine.country} | ₩${wine.price.toLocaleString('ko-KR')}`)
+          })
+
+          // Broadcast wine IDs via SSE
+          const wineIds = wines.map(w => w.id)
+          const encoder = new TextEncoder()
+          const message = encoder.encode(`data: ${JSON.stringify({
+            type: 'wine_recommendations',
+            wineIds
+          })}\n\n`)
+
+          console.log(`📡 SSE broadcast: [${wineIds.join(', ')}] to ${sseClients.size} clients`)
+
+          sseClients.forEach(controller => {
+            try {
+              controller.enqueue(message)
+            } catch (error) {
+              console.error('Failed to send SSE message, removing client:', error)
+              sseClients.delete(controller)
+            }
           })
 
           return new Response(JSON.stringify({

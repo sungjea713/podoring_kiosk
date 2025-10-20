@@ -30,6 +30,7 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   const [recommendedWines, setRecommendedWines] = React.useState<Wine[]>([])
 
   const conversationRef = React.useRef<Conversation | null>(null)
+  const eventSourceRef = React.useRef<EventSource | null>(null)
   const { addToCart } = useKioskState()
 
   // 화면 크기 감지
@@ -42,6 +43,56 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // SSE 연결 - 모달이 열릴 때 연결
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    console.log('📡 Connecting to SSE...')
+    const eventSource = new EventSource('/api/wine-recommendations/stream')
+
+    eventSource.onopen = () => {
+      console.log('✅ SSE connected')
+    }
+
+    eventSource.onmessage = async (event) => {
+      const data = JSON.parse(event.data)
+      console.log('📡 SSE message:', data)
+
+      if (data.type === 'connected') {
+        console.log('✅ SSE connection confirmed')
+      } else if (data.type === 'wine_recommendations') {
+        const wineIds = data.wineIds as number[]
+        console.log(`🍷 Received wine IDs: [${wineIds.join(', ')}]`)
+
+        // Fetch wine details for each ID
+        try {
+          const winePromises = wineIds.map(id =>
+            fetch(`/api/wines/${id}`).then(res => res.json())
+          )
+
+          const wines = await Promise.all(winePromises)
+          console.log('✅ Got wine details:', wines)
+
+          setRecommendedWines(wines)
+          setStatus('Found wines! Agent is describing them...')
+        } catch (error) {
+          console.error('❌ Failed to fetch wine details:', error)
+        }
+      }
+    }
+
+    eventSource.onerror = (error) => {
+      console.error('❌ SSE connection error:', error)
+    }
+
+    eventSourceRef.current = eventSource
+
+    return () => {
+      console.log('📡 Closing SSE connection')
+      eventSource.close()
+    }
+  }, [isOpen])
 
   // 초기화 - 모달이 열릴 때만 실행
   React.useEffect(() => {
@@ -150,38 +201,19 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           setIsListening(false)
           setStatus('Disconnected')
         },
-        onMessage: async (message) => {
-          console.log('🎤 Agent message:', message.type, message)
+        onMessage: (message) => {
+          console.log('🎤 Agent message:', message)
 
-          if (message.type === 'user_transcript') {
-            const userQuery = message.message
-            setUserMessage(userQuery)
-            setStatus(`You said: "${userQuery}"`)
-
-            // 사용자 발화 감지 → 직접 와인 검색 API 호출
-            console.log('🔍 Calling wine search API with query:', userQuery)
-            try {
-              const searchResponse = await fetch('/api/search/semantic', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: userQuery, limit: 3 })
-              })
-
-              const searchData = await searchResponse.json()
-              console.log('🍷 Wine search results:', searchData)
-
-              if (searchData.success && searchData.wines && searchData.wines.length > 0) {
-                setRecommendedWines(searchData.wines)
-                setStatus('Found wines! Agent is describing them...')
-              } else {
-                console.warn('⚠️ No wines found')
-              }
-            } catch (error) {
-              console.error('❌ Wine search failed:', error)
-            }
-          } else if (message.type === 'agent_response') {
+          // User's speech
+          if (message.source === 'user') {
+            setUserMessage(message.message)
+            setStatus(`You said: "${message.message}"`)
+          }
+          // Agent's response
+          else if (message.source === 'ai') {
             setStatus(`Agent: "${message.message}"`)
           }
+          // SSE가 와인 카드를 처리하므로 여기서는 검색 호출 불필요
         },
         onError: (error) => {
           console.error('Voice assistant error:', error)
