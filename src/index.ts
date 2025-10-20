@@ -1,6 +1,9 @@
 import indexHtml from "./frontend/index.html"
 import { getWines, getWineById, getMaxPrice } from "./api/wines"
 import { getInventoryByWineId } from "./api/inventory"
+import { generateQueryEmbedding } from "./api/embeddings"
+import { rerankWines } from "./api/rerank"
+import { supabase } from "./db/supabase"
 
 const PORT = Number(Bun.env.PORT) || 4000
 
@@ -138,6 +141,75 @@ Bun.serve({
         } catch (error: any) {
           console.error('Error fetching inventory:', error)
           return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+          })
+        }
+      }
+    },
+
+    // Semantic search for voice assistant
+    "/api/search/semantic": {
+      POST: async (req) => {
+        try {
+          const { query, limit = 3 } = await req.json()
+
+          if (!query) {
+            return new Response(JSON.stringify({ error: "Query is required" }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" }
+            })
+          }
+
+          console.log(`Semantic search query: "${query}", limit: ${limit}`)
+
+          // 1. Generate query embedding
+          const queryEmbedding = await generateQueryEmbedding(query)
+
+          // 2. Search similar wines using pgvector
+          const { data: candidates, error } = await supabase.rpc('match_wines', {
+            query_embedding: queryEmbedding,
+            match_threshold: 0.3,
+            match_count: 50
+          })
+
+          if (error) {
+            console.error('Supabase RPC error:', error)
+            throw error
+          }
+
+          if (!candidates || candidates.length === 0) {
+            return new Response(JSON.stringify({
+              success: true,
+              wines: [],
+              count: 0
+            }), {
+              headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+              }
+            })
+          }
+
+          // 3. Rerank with Cohere
+          const wines = await rerankWines(query, candidates, limit)
+
+          return new Response(JSON.stringify({
+            success: true,
+            wines,
+            count: wines.length
+          }), {
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*" // ElevenLabs Agent 호출 허용
+            }
+          })
+        } catch (error: any) {
+          console.error('Semantic search error:', error)
+          return new Response(JSON.stringify({
+            success: false,
+            error: error.message
+          }), {
             status: 500,
             headers: { "Content-Type": "application/json" }
           })

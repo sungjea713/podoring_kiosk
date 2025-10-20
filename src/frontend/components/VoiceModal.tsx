@@ -1,9 +1,12 @@
 import React from 'react'
-import { X } from 'lucide-react'
+import { X, Mic, MicOff } from 'lucide-react'
+import { Conversation } from '@11labs/client'
+import type { Wine } from '../../types'
 
 interface VoiceModalProps {
   isOpen: boolean
   onClose: () => void
+  onWinesRecommended?: (wines: Wine[]) => void
 }
 
 interface FloatingPhrase {
@@ -16,10 +19,16 @@ interface FloatingPhrase {
   opacity: number
 }
 
-export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
+export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: VoiceModalProps) {
   const [phrases, setPhrases] = React.useState<FloatingPhrase[]>([])
   const [screenHeight, setScreenHeight] = React.useState(window.innerHeight)
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth)
+  const [isConnected, setIsConnected] = React.useState(false)
+  const [isListening, setIsListening] = React.useState(false)
+  const [userMessage, setUserMessage] = React.useState('')
+  const [status, setStatus] = React.useState('Ready to talk')
+
+  const conversationRef = React.useRef<Conversation | null>(null)
 
   // 화면 크기 감지
   React.useEffect(() => {
@@ -61,10 +70,10 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
       text,
       x: Math.random() * screenWidth,
       y: Math.random() * screenHeight,
-      vx: (Math.random() - 0.5) * 0.6 + (Math.random() > 0.5 ? 0.7 : -0.7), // -1 ~ 1 (하한선 더 높임)
-      vy: (Math.random() - 0.5) * 0.6 + (Math.random() > 0.5 ? 0.7 : -0.7), // -1 ~ 1 (하한선 더 높임)
-      size: 40 + Math.random() * 110, // 40-150px
-      opacity: 0.12 + Math.random() * 0.18, // 0.12-0.3
+      vx: (Math.random() - 0.5) * 0.6 + (Math.random() > 0.5 ? 0.7 : -0.7),
+      vy: (Math.random() - 0.5) * 0.6 + (Math.random() > 0.5 ? 0.7 : -0.7),
+      size: 40 + Math.random() * 110,
+      opacity: 0.12 + Math.random() * 0.18,
     }))
 
     setPhrases(initialPhrases)
@@ -82,7 +91,6 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           let newVx = phrase.vx
           let newVy = phrase.vy
 
-          // 문장 시작점이 벽에 닿으면 튕김 (동적 화면 크기 사용)
           if (newX < 0) {
             newX = 0
             newVx = Math.abs(newVx)
@@ -108,10 +116,70 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           }
         })
       )
-    }, 16) // ~60fps
+    }, 16)
 
     return () => clearInterval(interval)
   }, [isOpen, phrases.length, screenHeight, screenWidth])
+
+  // ElevenLabs 음성 어시스턴트 연결
+  const connectToAssistant = async () => {
+    try {
+      setStatus('Connecting to voice assistant...')
+
+      const conversation = await Conversation.startSession({
+        agentId: import.meta.env.VITE_ELEVENLABS_AGENT_ID,
+        onConnect: () => {
+          console.log('Connected to ElevenLabs Agent')
+          setIsConnected(true)
+          setStatus('Connected! Start speaking...')
+        },
+        onDisconnect: () => {
+          console.log('Disconnected from Agent')
+          setIsConnected(false)
+          setIsListening(false)
+          setStatus('Disconnected')
+        },
+        onMessage: (message) => {
+          console.log('Agent message:', message)
+          if (message.type === 'user_transcript') {
+            setUserMessage(message.message)
+            setStatus(`You said: "${message.message}"`)
+          } else if (message.type === 'agent_response') {
+            setStatus(`Agent: "${message.message}"`)
+          }
+        },
+        onError: (error) => {
+          console.error('Voice assistant error:', error)
+          setStatus(`Error: ${error.message}`)
+          setIsConnected(false)
+        }
+      })
+
+      conversationRef.current = conversation
+      setIsListening(true)
+    } catch (error) {
+      console.error('Failed to connect:', error)
+      setStatus('Failed to connect. Please try again.')
+    }
+  }
+
+  // 연결 종료
+  const disconnect = async () => {
+    if (conversationRef.current) {
+      await conversationRef.current.endSession()
+      conversationRef.current = null
+      setIsConnected(false)
+      setIsListening(false)
+      setStatus('Disconnected')
+    }
+  }
+
+  // 모달 닫을 때 연결 종료
+  React.useEffect(() => {
+    if (!isOpen && conversationRef.current) {
+      disconnect()
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -153,6 +221,13 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           .ambient-gradient {
             animation: ambient-hue 90s ease-in-out infinite;
           }
+          @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 255, 255, 0.6); }
+          }
+          .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+          }
         `}</style>
         <div className="absolute inset-0 ambient-gradient" style={{
           backdropFilter: 'blur(40px)',
@@ -169,6 +244,7 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
         <button
           onClick={(e) => {
             e.stopPropagation()
+            disconnect()
             onClose()
           }}
           className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-all hover:bg-white/30 hover:scale-110 z-[200]"
@@ -181,8 +257,37 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           <h2 className="text-white text-7xl font-bold mb-6 font-bodoni">
             Voice Assistant
           </h2>
-          <p className="text-white/80 text-4xl font-cormorant">
-            Say something to start.
+
+          {/* Status */}
+          <p className="text-white/80 text-3xl font-cormorant mb-8">
+            {status}
+          </p>
+
+          {/* User message display */}
+          {userMessage && (
+            <div className="text-white text-2xl font-cormorant mb-8 max-w-3xl text-center bg-white/10 backdrop-blur-md rounded-2xl p-6">
+              "{userMessage}"
+            </div>
+          )}
+
+          {/* Microphone button */}
+          <button
+            onClick={isConnected ? disconnect : connectToAssistant}
+            className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${
+              isListening
+                ? 'bg-red-500/80 hover:bg-red-600/80 pulse-glow'
+                : 'bg-white/20 hover:bg-white/30'
+            } backdrop-blur-md hover:scale-110`}
+          >
+            {isConnected ? (
+              <MicOff className="w-16 h-16 text-white" strokeWidth={2} />
+            ) : (
+              <Mic className="w-16 h-16 text-white" strokeWidth={2} />
+            )}
+          </button>
+
+          <p className="text-white/60 text-xl font-cormorant mt-6">
+            {isConnected ? 'Click to stop' : 'Click to start'}
           </p>
         </div>
 
