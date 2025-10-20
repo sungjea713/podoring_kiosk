@@ -179,6 +179,7 @@ Bun.serve({
           }
 
           if (!candidates || candidates.length === 0) {
+            console.log('✗ No wines found')
             return new Response(JSON.stringify({
               success: true,
               wines: [],
@@ -193,6 +194,12 @@ Bun.serve({
 
           // 3. Rerank with Cohere
           const wines = await rerankWines(query, candidates, limit)
+
+          // Log search results
+          console.log(`✓ Found ${wines.length} wines:`)
+          wines.forEach((wine, index) => {
+            console.log(`  ${index + 1}. ${wine.title} ${wine.vintage || ''} | ${wine.country} | ₩${wine.price.toLocaleString('ko-KR')}`)
+          })
 
           return new Response(JSON.stringify({
             success: true,
