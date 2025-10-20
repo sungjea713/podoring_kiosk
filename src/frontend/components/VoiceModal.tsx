@@ -23,10 +23,6 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   const [phrases, setPhrases] = React.useState<FloatingPhrase[]>([])
   const [screenHeight, setScreenHeight] = React.useState(window.innerHeight)
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth)
-  const [isConnected, setIsConnected] = React.useState(false)
-  const [isListening, setIsListening] = React.useState(false)
-  const [userMessage, setUserMessage] = React.useState('')
-  const [status, setStatus] = React.useState('Ready to talk')
   const [recommendedWines, setRecommendedWines] = React.useState<Wine[]>([])
 
   const conversationRef = React.useRef<Conversation | null>(null)
@@ -75,7 +71,6 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           console.log('✅ Got wine details:', wines)
 
           setRecommendedWines(wines)
-          setStatus('Found wines! Agent is describing them...')
         } catch (error) {
           console.error('❌ Failed to fetch wine details:', error)
         }
@@ -178,8 +173,6 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   // ElevenLabs 음성 어시스턴트 연결
   const connectToAssistant = async () => {
     try {
-      setStatus('Connecting to voice assistant...')
-
       // 백엔드에서 Agent ID 가져오기
       const configRes = await fetch('/api/elevenlabs/config')
       const config = await configRes.json()
@@ -191,42 +184,23 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
       const conversation = await Conversation.startSession({
         agentId: config.agentId,
         onConnect: () => {
-          console.log('Connected to ElevenLabs Agent')
-          setIsConnected(true)
-          setStatus('Connected! Start speaking...')
+          console.log('✅ Connected to ElevenLabs Agent')
         },
         onDisconnect: () => {
-          console.log('Disconnected from Agent')
-          setIsConnected(false)
-          setIsListening(false)
-          setStatus('Disconnected')
+          console.log('❌ Disconnected from Agent')
         },
         onMessage: (message) => {
           console.log('🎤 Agent message:', message)
-
-          // User's speech
-          if (message.source === 'user') {
-            setUserMessage(message.message)
-            setStatus(`You said: "${message.message}"`)
-          }
-          // Agent's response
-          else if (message.source === 'ai') {
-            setStatus(`Agent: "${message.message}"`)
-          }
-          // SSE가 와인 카드를 처리하므로 여기서는 검색 호출 불필요
+          // SSE가 와인 카드를 처리하므로 여기서는 UI 업데이트 불필요
         },
         onError: (error) => {
           console.error('Voice assistant error:', error)
-          setStatus(`Error: ${error.message}`)
-          setIsConnected(false)
         }
       })
 
       conversationRef.current = conversation
-      setIsListening(true)
     } catch (error) {
       console.error('Failed to connect:', error)
-      setStatus('Failed to connect. Please try again.')
     }
   }
 
@@ -235,9 +209,6 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
     if (conversationRef.current) {
       await conversationRef.current.endSession()
       conversationRef.current = null
-      setIsConnected(false)
-      setIsListening(false)
-      setStatus('Disconnected')
     }
   }
 
@@ -255,17 +226,13 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   // 장바구니에 추가
   const handleAddToCart = (wine: Wine) => {
     addToCart(wine)
-    // 간단한 피드백 (선택사항)
-    setStatus(`Added "${wine.title}" to cart!`)
-    setTimeout(() => setStatus('Continue shopping or speak for more recommendations'), 2000)
+    console.log(`✅ Added "${wine.title}" to cart`)
   }
 
   // 모달 닫기 (모든 상태 초기화)
   const handleClose = () => {
     disconnect()
     setRecommendedWines([])
-    setUserMessage('')
-    setStatus('Ready to talk')
     onClose()
   }
 
@@ -334,18 +301,6 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-12">
-          {/* Status */}
-          <p className="text-white text-5xl font-cormorant mb-8">
-            {status}
-          </p>
-
-          {/* User message display */}
-          {userMessage && (
-            <div className="text-white text-3xl font-cormorant mb-8 max-w-3xl text-center bg-white/10 backdrop-blur-md rounded-2xl p-8">
-              "{userMessage}"
-            </div>
-          )}
-
           {/* Recommended Wines Cards */}
           {recommendedWines.length > 0 && (
             <div className="grid grid-cols-3 gap-6 mt-8 max-w-6xl">
