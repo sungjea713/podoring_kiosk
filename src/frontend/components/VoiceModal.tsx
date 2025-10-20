@@ -126,8 +126,16 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
     try {
       setStatus('Connecting to voice assistant...')
 
+      // 백엔드에서 Agent ID 가져오기
+      const configRes = await fetch('/api/elevenlabs/config')
+      const config = await configRes.json()
+
+      if (!config.agentId) {
+        throw new Error('Agent ID not configured')
+      }
+
       const conversation = await Conversation.startSession({
-        agentId: import.meta.env.VITE_ELEVENLABS_AGENT_ID,
+        agentId: config.agentId,
         onConnect: () => {
           console.log('Connected to ElevenLabs Agent')
           setIsConnected(true)

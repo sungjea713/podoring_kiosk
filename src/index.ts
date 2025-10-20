@@ -148,6 +148,20 @@ Bun.serve({
       }
     },
 
+    // ElevenLabs configuration for client
+    "/api/elevenlabs/config": {
+      GET: async () => {
+        return new Response(JSON.stringify({
+          agentId: Bun.env.ELEVENLABS_AGENT_ID
+        }), {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        })
+      }
+    },
+
     // Semantic search for voice assistant
     "/api/search/semantic": {
       POST: async (req) => {
