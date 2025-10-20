@@ -182,9 +182,13 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
     }
   }
 
-  // 모달 닫을 때 연결 종료
+  // 모달 열릴 때 자동으로 연결, 닫을 때 연결 종료
   React.useEffect(() => {
-    if (!isOpen && conversationRef.current) {
+    if (isOpen && !conversationRef.current) {
+      // 모달 열릴 때 자동 연결
+      connectToAssistant()
+    } else if (!isOpen && conversationRef.current) {
+      // 모달 닫힐 때 연결 종료
       disconnect()
     }
   }, [isOpen])
