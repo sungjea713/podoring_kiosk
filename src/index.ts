@@ -12,6 +12,7 @@ const sseClients = new Set<ReadableStreamDefaultController>()
 
 Bun.serve({
   port: PORT,
+  idleTimeout: 255, // SSE 연결 유지를 위해 긴 타임아웃 설정
 
   // Static file serving
   async fetch(req) {
@@ -171,13 +172,27 @@ Bun.serve({
         const stream = new ReadableStream({
           start(controller) {
             sseClients.add(controller)
+            console.log(`✅ SSE client connected. Total clients: ${sseClients.size}`)
 
             // Send initial connection message
             const encoder = new TextEncoder()
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'connected' })}\n\n`))
 
+            // Send keepalive ping every 15 seconds to prevent timeout
+            const keepaliveInterval = setInterval(() => {
+              try {
+                controller.enqueue(encoder.encode(`: keepalive\n\n`))
+              } catch (error) {
+                console.log('❌ Keepalive failed, cleaning up client')
+                clearInterval(keepaliveInterval)
+                sseClients.delete(controller)
+              }
+            }, 15000)
+
             // Handle client disconnect
             req.signal?.addEventListener('abort', () => {
+              console.log(`❌ SSE client disconnected. Total clients: ${sseClients.size - 1}`)
+              clearInterval(keepaliveInterval)
               sseClients.delete(controller)
               try {
                 controller.close()
