@@ -151,7 +151,9 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           setStatus('Disconnected')
         },
         onMessage: (message) => {
-          console.log('Agent message:', message)
+          console.log('🎤 Agent message type:', message.type)
+          console.log('🎤 Agent message full:', message)
+
           if (message.type === 'user_transcript') {
             setUserMessage(message.message)
             setStatus(`You said: "${message.message}"`)
@@ -159,17 +161,29 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
             setStatus(`Agent: "${message.message}"`)
           } else if (message.type === 'tool_call') {
             // Tool 호출 중
+            console.log('🔧 Tool being called:', message)
             setStatus('Searching for wines...')
-          } else if (message.type === 'tool_response') {
+          } else if (message.type === 'tool_response' || message.type === 'tool_result') {
             // Tool 응답 받음 - 와인 데이터 파싱
+            console.log('✅ Tool response received:', message)
             try {
-              const response = JSON.parse(message.response)
+              // message.response 또는 message.result 체크
+              const responseData = message.response || message.result || message.output
+              console.log('📦 Raw response data:', responseData)
+
+              const response = typeof responseData === 'string' ? JSON.parse(responseData) : responseData
+              console.log('📋 Parsed response:', response)
+
               if (response.success && response.wines && response.wines.length > 0) {
+                console.log('🍷 Found wines:', response.wines.length)
                 setRecommendedWines(response.wines)
                 setStatus('Found wines! Agent is describing them...')
+              } else {
+                console.warn('⚠️ No wines in response:', response)
               }
             } catch (error) {
-              console.error('Failed to parse tool response:', error)
+              console.error('❌ Failed to parse tool response:', error)
+              console.error('❌ Raw message:', message)
             }
           }
         },
