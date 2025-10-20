@@ -24,9 +24,11 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   const [screenHeight, setScreenHeight] = React.useState(window.innerHeight)
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth)
   const [recommendedWines, setRecommendedWines] = React.useState<Wine[]>([])
+  const [flyingCards, setFlyingCards] = React.useState<Map<number, { x: number; y: number; width: number; height: number; wine: Wine }>>(new Map())
 
   const conversationRef = React.useRef<Conversation | null>(null)
   const eventSourceRef = React.useRef<EventSource | null>(null)
+  const cardRefs = React.useRef<Map<number, HTMLDivElement>>(new Map())
   const { addToCart } = useKioskState()
 
   // 화면 크기 감지
@@ -225,6 +227,33 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
 
   // 장바구니에 추가
   const handleAddToCart = (wine: Wine) => {
+    // 카드의 현재 위치와 크기 저장
+    const cardElement = cardRefs.current.get(wine.id)
+    if (cardElement) {
+      const rect = cardElement.getBoundingClientRect()
+      setFlyingCards(prev => {
+        const newMap = new Map(prev)
+        newMap.set(wine.id, {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height,
+          wine
+        })
+        return newMap
+      })
+
+      // 애니메이션 종료 후 상태 리셋
+      setTimeout(() => {
+        setFlyingCards(prev => {
+          const newMap = new Map(prev)
+          newMap.delete(wine.id)
+          return newMap
+        })
+      }, 700)
+    }
+
+    // 장바구니에 추가
     addToCart(wine)
     console.log(`✅ Added "${wine.title}" to cart`)
   }
@@ -319,6 +348,13 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
               {recommendedWines.map((wine) => (
                 <div
                   key={wine.id}
+                  ref={(el) => {
+                    if (el) {
+                      cardRefs.current.set(wine.id, el)
+                    } else {
+                      cardRefs.current.delete(wine.id)
+                    }
+                  }}
                   className="bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
                 >
                   {/* Wine Image */}
@@ -385,6 +421,73 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
             ))}
           </div>
         )}
+
+        {/* 날아가는 카드 애니메이션 */}
+        {Array.from(flyingCards.entries()).map(([wineId, cardData]) => (
+          <React.Fragment key={`flying-${wineId}`}>
+            <div
+              className="fixed pointer-events-none z-[9999] bg-white/90 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl"
+              style={{
+                left: `${cardData.x}px`,
+                top: `${cardData.y}px`,
+                width: `${cardData.width}px`,
+                height: `${cardData.height}px`,
+                animation: `flyToCart-${wineId} 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`
+              }}
+            >
+              {/* 와인 카드 내용 복제 */}
+              <div className="p-6">
+                <div className="w-full h-48 mb-4 flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
+                  {cardData.wine.image ? (
+                    <img
+                      src={cardData.wine.image}
+                      alt={cardData.wine.title}
+                      className="h-full object-contain"
+                    />
+                  ) : (
+                    <div className="text-gray-400 text-4xl">🍷</div>
+                  )}
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+                  {cardData.wine.title}
+                </h3>
+                <p className="text-sm text-gray-600 mb-1">
+                  {cardData.wine.vintage && `${cardData.wine.vintage} • `}{cardData.wine.winery}
+                </p>
+                <p className="text-sm text-gray-600 mb-3">
+                  {cardData.wine.country} • {cardData.wine.type}
+                </p>
+
+                <p className="text-2xl font-bold text-blue-600 mb-4">
+                  ₩{cardData.wine.price.toLocaleString('ko-KR')}
+                </p>
+              </div>
+            </div>
+
+            {/* 애니메이션 키프레임 */}
+            <style>{`
+              @keyframes flyToCart-${wineId} {
+                0% {
+                  transform: translate(0, 0) scale(1);
+                  opacity: 1;
+                }
+                70% {
+                  transform: translate(calc(100vw - ${cardData.x}px - ${cardData.width / 2}px - 72px), calc(100vh - ${cardData.y}px - ${cardData.height / 2}px - 160px)) scale(0.1);
+                  opacity: 0.6;
+                }
+                85% {
+                  transform: translate(calc(100vw - ${cardData.x}px - ${cardData.width / 2}px - 72px), calc(100vh - ${cardData.y}px - ${cardData.height / 2}px - 160px)) scale(0.03);
+                  opacity: 0.3;
+                }
+                100% {
+                  transform: translate(calc(100vw - ${cardData.x}px - ${cardData.width / 2}px - 72px), calc(100vh - ${cardData.y}px - ${cardData.height / 2}px - 160px)) scale(0);
+                  opacity: 0;
+                }
+              }
+            `}</style>
+          </React.Fragment>
+        ))}
       </div>
     </div>
   )
