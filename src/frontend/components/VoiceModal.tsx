@@ -46,50 +46,72 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   React.useEffect(() => {
     if (!isOpen) return
 
-    console.log('📡 Connecting to SSE...')
+    console.log('📡 [SSE] Connecting to /api/wine-recommendations/stream...')
     const eventSource = new EventSource('/api/wine-recommendations/stream')
 
     eventSource.onopen = () => {
-      console.log('✅ SSE connected')
+      console.log('✅ [SSE] Connected successfully')
     }
 
     eventSource.onmessage = async (event) => {
-      const data = JSON.parse(event.data)
-      console.log('📡 SSE message:', data)
+      console.log('📡 [SSE] Raw message received:', event.data)
 
-      if (data.type === 'connected') {
-        console.log('✅ SSE connection confirmed')
-      } else if (data.type === 'wine_recommendations') {
-        const wineIds = data.wineIds as number[]
-        console.log(`🍷 Received wine IDs: [${wineIds.join(', ')}]`)
+      try {
+        const data = JSON.parse(event.data)
+        console.log('📡 [SSE] Parsed message:', data)
 
-        // Fetch wine details for each ID
-        try {
-          const winePromises = wineIds.map(id =>
-            fetch(`/api/wines/${id}`).then(res => res.json())
-          )
+        if (data.type === 'connected') {
+          console.log('✅ [SSE] Connection confirmed by server')
+        } else if (data.type === 'wine_recommendations') {
+          const wineIds = data.wineIds as number[]
+          console.log(`🍷 [SSE] Received ${wineIds.length} wine IDs:`, wineIds)
 
-          const wines = await Promise.all(winePromises)
-          console.log('✅ Got wine details:', wines)
+          // Fetch wine details for each ID
+          try {
+            console.log('🔍 [API] Fetching wine details...')
+            const winePromises = wineIds.map(id =>
+              fetch(`/api/wines/${id}`).then(res => {
+                console.log(`✅ [API] Fetched wine ${id}`)
+                return res.json()
+              })
+            )
 
-          setRecommendedWines(wines)
-        } catch (error) {
-          console.error('❌ Failed to fetch wine details:', error)
+            const wines = await Promise.all(winePromises)
+            console.log('✅ [API] Got all wine details:', wines)
+            console.log('🎨 [UI] Setting recommendedWines state...')
+
+            setRecommendedWines(wines)
+
+            console.log('🎉 [UI] Wine cards should now be visible!')
+          } catch (error) {
+            console.error('❌ [API] Failed to fetch wine details:', error)
+          }
         }
+      } catch (parseError) {
+        console.error('❌ [SSE] Failed to parse message:', parseError, 'Raw data:', event.data)
       }
     }
 
     eventSource.onerror = (error) => {
-      console.error('❌ SSE connection error:', error)
+      console.error('❌ [SSE] Connection error:', error)
+      console.log('⚠️ [SSE] ReadyState:', eventSource.readyState)
     }
 
     eventSourceRef.current = eventSource
 
     return () => {
-      console.log('📡 Closing SSE connection')
+      console.log('📡 [SSE] Closing connection')
       eventSource.close()
     }
   }, [isOpen])
+
+  // recommendedWines 상태 변경 추적
+  React.useEffect(() => {
+    console.log('🔄 [STATE] recommendedWines changed:', recommendedWines.length, 'wines')
+    if (recommendedWines.length > 0) {
+      console.log('🍷 [STATE] Wine IDs in state:', recommendedWines.map(w => w.id))
+    }
+  }, [recommendedWines])
 
   // 초기화 - 모달이 열릴 때만 실행
   React.useEffect(() => {
