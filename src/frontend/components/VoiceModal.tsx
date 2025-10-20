@@ -3,6 +3,7 @@ import { X, ShoppingCart } from 'lucide-react'
 import { Conversation } from '@11labs/client'
 import type { Wine } from '../../types'
 import { useKioskState } from '../hooks/useKioskState'
+import WineDetailModal from './WineDetailModal'
 
 interface VoiceModalProps {
   isOpen: boolean
@@ -25,6 +26,7 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth)
   const [recommendedWines, setRecommendedWines] = React.useState<Wine[]>([])
   const [flyingCards, setFlyingCards] = React.useState<Map<number, { x: number; y: number; width: number; height: number; wine: Wine }>>(new Map())
+  const [selectedWine, setSelectedWine] = React.useState<Wine | null>(null)
 
   const conversationRef = React.useRef<Conversation | null>(null)
   const eventSourceRef = React.useRef<EventSource | null>(null)
@@ -46,76 +48,45 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   React.useEffect(() => {
     if (!isOpen) return
 
-    console.log('📡 [SSE] Connecting to /api/wine-recommendations/stream...')
     const eventSource = new EventSource('/api/wine-recommendations/stream')
 
-    eventSource.onopen = () => {
-      console.log('✅ [SSE] Connected successfully')
-    }
-
     eventSource.onmessage = async (event) => {
-      console.log('📡 [SSE] Raw message received:', event.data)
-
       try {
         const data = JSON.parse(event.data)
-        console.log('📡 [SSE] Parsed message:', data)
 
-        if (data.type === 'connected') {
-          console.log('✅ [SSE] Connection confirmed by server')
-        } else if (data.type === 'wine_recommendations') {
+        if (data.type === 'wine_recommendations') {
           const wineIds = data.wineIds as number[]
-          console.log(`🍷 [SSE] Received ${wineIds.length} wine IDs:`, wineIds)
 
           // 먼저 기존 카드를 초기화 (새 추천 시작)
-          console.log('🔄 [UI] Clearing previous wine cards...')
           setRecommendedWines([])
 
           // Fetch wine details for each ID
           try {
-            console.log('🔍 [API] Fetching wine details...')
             const winePromises = wineIds.map(id =>
-              fetch(`/api/wines/${id}`).then(res => {
-                console.log(`✅ [API] Fetched wine ${id}`)
-                return res.json()
-              })
+              fetch(`/api/wines/${id}`).then(res => res.json())
             )
 
             const wines = await Promise.all(winePromises)
-            console.log('✅ [API] Got all wine details:', wines)
-            console.log('🎨 [UI] Setting new recommendedWines state...')
-
             setRecommendedWines(wines)
-
-            console.log('🎉 [UI] Wine cards should now be visible!')
           } catch (error) {
-            console.error('❌ [API] Failed to fetch wine details:', error)
+            console.error('Failed to fetch wine details:', error)
           }
         }
       } catch (parseError) {
-        console.error('❌ [SSE] Failed to parse message:', parseError, 'Raw data:', event.data)
+        console.error('Failed to parse SSE message:', parseError)
       }
     }
 
     eventSource.onerror = (error) => {
-      console.error('❌ [SSE] Connection error:', error)
-      console.log('⚠️ [SSE] ReadyState:', eventSource.readyState)
+      console.error('SSE connection error:', error)
     }
 
     eventSourceRef.current = eventSource
 
     return () => {
-      console.log('📡 [SSE] Closing connection')
       eventSource.close()
     }
   }, [isOpen])
-
-  // recommendedWines 상태 변경 추적
-  React.useEffect(() => {
-    console.log('🔄 [STATE] recommendedWines changed:', recommendedWines.length, 'wines')
-    if (recommendedWines.length > 0) {
-      console.log('🍷 [STATE] Wine IDs in state:', recommendedWines.map(w => w.id))
-    }
-  }, [recommendedWines])
 
   // 초기화 - 모달이 열릴 때만 실행
   React.useEffect(() => {
@@ -381,10 +352,11 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
                       cardRefs.current.delete(wine.id)
                     }
                   }}
-                  className="bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
+                  className="bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-xl transition-all hover:scale-105 hover:shadow-2xl cursor-pointer flex flex-col"
+                  onClick={() => setSelectedWine(wine)}
                 >
                   {/* Wine Image */}
-                  <div className="w-full h-48 mb-4 flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
+                  <div className="w-full h-48 mb-4 flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
                     {wine.image ? (
                       <img
                         src={wine.image}
@@ -396,30 +368,37 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
                     )}
                   </div>
 
-                  {/* Wine Info */}
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
-                    {wine.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-1">
-                    {wine.vintage && `${wine.vintage} • `}{wine.winery}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {wine.country} • {wine.type}
-                  </p>
+                  {/* Wine Info - 고정 높이 영역 */}
+                  <div className="flex-1 flex flex-col">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2" style={{ minHeight: '3.5rem' }}>
+                      {wine.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-1">
+                      {wine.vintage && `${wine.vintage} • `}{wine.winery}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {wine.country} • {wine.type}
+                    </p>
 
-                  {/* Price */}
-                  <p className="text-2xl font-bold text-blue-600 mb-4">
-                    ₩{wine.price.toLocaleString('ko-KR')}
-                  </p>
+                    {/* Price - 항상 버튼 위에 위치 */}
+                    <div className="mt-auto">
+                      <p className="text-2xl font-bold text-blue-600 mb-4">
+                        ₩{wine.price.toLocaleString('ko-KR')}
+                      </p>
 
-                  {/* Add to Cart Button */}
-                  <button
-                    onClick={() => handleAddToCart(wine)}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
-                  >
-                    <ShoppingCart className="w-5 h-5" />
-                    Add to Cart
-                  </button>
+                      {/* Add to Cart Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleAddToCart(wine)
+                        }}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+                      >
+                        <ShoppingCart className="w-5 h-5" />
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -514,6 +493,14 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
             `}</style>
           </React.Fragment>
         ))}
+
+        {/* Wine Detail Modal */}
+        {selectedWine && (
+          <WineDetailModal
+            wine={selectedWine}
+            onClose={() => setSelectedWine(null)}
+          />
+        )}
       </div>
     </div>
   )

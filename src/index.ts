@@ -172,7 +172,6 @@ Bun.serve({
         const stream = new ReadableStream({
           start(controller) {
             sseClients.add(controller)
-            console.log(`✅ SSE client connected. Total clients: ${sseClients.size}`)
 
             // Send initial connection message
             const encoder = new TextEncoder()
@@ -183,7 +182,6 @@ Bun.serve({
               try {
                 controller.enqueue(encoder.encode(`: keepalive\n\n`))
               } catch (error) {
-                console.log('❌ Keepalive failed, cleaning up client')
                 clearInterval(keepaliveInterval)
                 sseClients.delete(controller)
               }
@@ -191,13 +189,12 @@ Bun.serve({
 
             // Handle client disconnect
             req.signal?.addEventListener('abort', () => {
-              console.log(`❌ SSE client disconnected. Total clients: ${sseClients.size - 1}`)
               clearInterval(keepaliveInterval)
               sseClients.delete(controller)
               try {
                 controller.close()
               } catch (e) {
-                console.log('Controller already closed')
+                // Ignore close errors
               }
             })
           }
@@ -275,13 +272,10 @@ Bun.serve({
             wineIds
           })}\n\n`)
 
-          console.log(`📡 SSE broadcast: [${wineIds.join(', ')}] to ${sseClients.size} clients`)
-
           sseClients.forEach(controller => {
             try {
               controller.enqueue(message)
             } catch (error) {
-              console.error('Failed to send SSE message, removing client:', error)
               sseClients.delete(controller)
             }
           })
