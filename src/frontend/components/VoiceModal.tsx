@@ -1,12 +1,12 @@
 import React from 'react'
-import { X } from 'lucide-react'
+import { X, ShoppingCart } from 'lucide-react'
 import { Conversation } from '@11labs/client'
 import type { Wine } from '../../types'
+import { useKioskState } from '../hooks/useKioskState'
 
 interface VoiceModalProps {
   isOpen: boolean
   onClose: () => void
-  onWinesRecommended?: (wines: Wine[]) => void
 }
 
 interface FloatingPhrase {
@@ -19,7 +19,7 @@ interface FloatingPhrase {
   opacity: number
 }
 
-export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: VoiceModalProps) {
+export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   const [phrases, setPhrases] = React.useState<FloatingPhrase[]>([])
   const [screenHeight, setScreenHeight] = React.useState(window.innerHeight)
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth)
@@ -27,8 +27,10 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
   const [isListening, setIsListening] = React.useState(false)
   const [userMessage, setUserMessage] = React.useState('')
   const [status, setStatus] = React.useState('Ready to talk')
+  const [recommendedWines, setRecommendedWines] = React.useState<Wine[]>([])
 
   const conversationRef = React.useRef<Conversation | null>(null)
+  const { addToCart } = useKioskState()
 
   // 화면 크기 감지
   React.useEffect(() => {
@@ -46,6 +48,7 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
     if (!isOpen) {
       // 모달이 닫히면 문장들 초기화
       setPhrases([])
+      setRecommendedWines([]) // 추천 와인도 초기화
       return
     }
 
@@ -154,6 +157,20 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
             setStatus(`You said: "${message.message}"`)
           } else if (message.type === 'agent_response') {
             setStatus(`Agent: "${message.message}"`)
+          } else if (message.type === 'tool_call') {
+            // Tool 호출 중
+            setStatus('Searching for wines...')
+          } else if (message.type === 'tool_response') {
+            // Tool 응답 받음 - 와인 데이터 파싱
+            try {
+              const response = JSON.parse(message.response)
+              if (response.success && response.wines && response.wines.length > 0) {
+                setRecommendedWines(response.wines)
+                setStatus('Found wines! Agent is describing them...')
+              }
+            } catch (error) {
+              console.error('Failed to parse tool response:', error)
+            }
           }
         },
         onError: (error) => {
@@ -193,6 +210,23 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
     }
   }, [isOpen])
 
+  // 장바구니에 추가
+  const handleAddToCart = (wine: Wine) => {
+    addToCart(wine)
+    // 간단한 피드백 (선택사항)
+    setStatus(`Added "${wine.title}" to cart!`)
+    setTimeout(() => setStatus('Continue shopping or speak for more recommendations'), 2000)
+  }
+
+  // 모달 닫기 (모든 상태 초기화)
+  const handleClose = () => {
+    disconnect()
+    setRecommendedWines([])
+    setUserMessage('')
+    setStatus('Ready to talk')
+    onClose()
+  }
+
   if (!isOpen) return null
 
   return (
@@ -200,7 +234,7 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Modal */}
@@ -233,13 +267,6 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
           .ambient-gradient {
             animation: ambient-hue 90s ease-in-out infinite;
           }
-          @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
-            50% { box-shadow: 0 0 40px rgba(255, 255, 255, 0.6); }
-          }
-          .pulse-glow {
-            animation: pulse-glow 2s ease-in-out infinite;
-          }
         `}</style>
         <div className="absolute inset-0 ambient-gradient" style={{
           backdropFilter: 'blur(40px)',
@@ -256,8 +283,7 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
         <button
           onClick={(e) => {
             e.stopPropagation()
-            disconnect()
-            onClose()
+            handleClose()
           }}
           className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-all hover:bg-white/30 hover:scale-110 z-[200]"
         >
@@ -277,27 +303,79 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
               "{userMessage}"
             </div>
           )}
+
+          {/* Recommended Wines Cards */}
+          {recommendedWines.length > 0 && (
+            <div className="grid grid-cols-3 gap-6 mt-8 max-w-6xl">
+              {recommendedWines.map((wine) => (
+                <div
+                  key={wine.id}
+                  className="bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
+                >
+                  {/* Wine Image */}
+                  <div className="w-full h-48 mb-4 flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
+                    {wine.image ? (
+                      <img
+                        src={wine.image}
+                        alt={wine.title}
+                        className="h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-4xl">🍷</div>
+                    )}
+                  </div>
+
+                  {/* Wine Info */}
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+                    {wine.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {wine.vintage && `${wine.vintage} • `}{wine.winery}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {wine.country} • {wine.type}
+                  </p>
+
+                  {/* Price */}
+                  <p className="text-2xl font-bold text-blue-600 mb-4">
+                    ₩{wine.price.toLocaleString('ko-KR')}
+                  </p>
+
+                  {/* Add to Cart Button */}
+                  <button
+                    onClick={() => handleAddToCart(wine)}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    Add to Cart
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Floating example phrases with physics */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-[5]">
-          {phrases.map((phrase, index) => (
-            <div
-              key={index}
-              className="absolute font-cormorant whitespace-nowrap"
-              style={{
-                transform: `translate(${phrase.x}px, ${phrase.y}px)`,
-                fontSize: `${phrase.size}px`,
-                color: `rgba(255, 255, 255, ${phrase.opacity})`,
-                willChange: 'transform',
-                backfaceVisibility: 'hidden',
-                WebkitFontSmoothing: 'antialiased',
-              }}
-            >
-              {phrase.text}
-            </div>
-          ))}
-        </div>
+        {recommendedWines.length === 0 && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-[5]">
+            {phrases.map((phrase, index) => (
+              <div
+                key={index}
+                className="absolute font-cormorant whitespace-nowrap"
+                style={{
+                  transform: `translate(${phrase.x}px, ${phrase.y}px)`,
+                  fontSize: `${phrase.size}px`,
+                  color: `rgba(255, 255, 255, ${phrase.opacity})`,
+                  willChange: 'transform',
+                  backfaceVisibility: 'hidden',
+                  WebkitFontSmoothing: 'antialiased',
+                }}
+              >
+                {phrase.text}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
