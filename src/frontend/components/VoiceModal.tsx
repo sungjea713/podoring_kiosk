@@ -301,6 +301,18 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-12">
+          {/* Title - Always visible */}
+          {recommendedWines.length === 0 && (
+            <div className="text-center mb-12">
+              <h1 className="text-white text-7xl font-cormorant font-bold mb-4">
+                Voice Assistant
+              </h1>
+              <p className="text-white text-3xl font-cormorant opacity-80">
+                Say something to start
+              </p>
+            </div>
+          )}
+
           {/* Recommended Wines Cards */}
           {recommendedWines.length > 0 && (
             <div className="grid grid-cols-3 gap-6 mt-8 max-w-6xl">
