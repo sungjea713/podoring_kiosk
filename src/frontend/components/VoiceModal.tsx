@@ -1,5 +1,5 @@
 import React from 'react'
-import { X, Mic, MicOff } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Conversation } from '@11labs/client'
 import type { Wine } from '../../types'
 
@@ -266,41 +266,17 @@ export default function VoiceModal({ isOpen, onClose, onWinesRecommended }: Voic
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-12">
-          <h2 className="text-white text-7xl font-bold mb-6 font-bodoni">
-            Voice Assistant
-          </h2>
-
           {/* Status */}
-          <p className="text-white/80 text-3xl font-cormorant mb-8">
+          <p className="text-white text-5xl font-cormorant mb-8">
             {status}
           </p>
 
           {/* User message display */}
           {userMessage && (
-            <div className="text-white text-2xl font-cormorant mb-8 max-w-3xl text-center bg-white/10 backdrop-blur-md rounded-2xl p-6">
+            <div className="text-white text-3xl font-cormorant mb-8 max-w-3xl text-center bg-white/10 backdrop-blur-md rounded-2xl p-8">
               "{userMessage}"
             </div>
           )}
-
-          {/* Microphone button */}
-          <button
-            onClick={isConnected ? disconnect : connectToAssistant}
-            className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${
-              isListening
-                ? 'bg-red-500/80 hover:bg-red-600/80 pulse-glow'
-                : 'bg-white/20 hover:bg-white/30'
-            } backdrop-blur-md hover:scale-110`}
-          >
-            {isConnected ? (
-              <MicOff className="w-16 h-16 text-white" strokeWidth={2} />
-            ) : (
-              <Mic className="w-16 h-16 text-white" strokeWidth={2} />
-            )}
-          </button>
-
-          <p className="text-white/60 text-xl font-cormorant mt-6">
-            {isConnected ? 'Click to stop' : 'Click to start'}
-          </p>
         </div>
 
         {/* Floating example phrases with physics */}
