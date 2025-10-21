@@ -264,8 +264,23 @@ Bun.serve({
             console.log(`  ${index + 1}. ${wine.title} ${wine.vintage || ''} | ${wine.country} | ₩${wine.price.toLocaleString('ko-KR')}`)
           })
 
+          // Simplify wine data for ElevenLabs (only necessary fields)
+          const simplifiedWines = wines.map(wine => ({
+            id: wine.id,
+            title: wine.title,
+            vintage: wine.vintage,
+            type: wine.type,
+            variety: wine.variety,
+            country: wine.country,
+            winery: wine.winery,
+            price: wine.price,
+            abv: wine.abv,
+            points: wine.points,
+            description: wine.description
+          }))
+
           // Broadcast wine IDs via SSE
-          const wineIds = wines.map(w => w.id)
+          const wineIds = simplifiedWines.map(w => w.id)
           const encoder = new TextEncoder()
           const message = encoder.encode(`data: ${JSON.stringify({
             type: 'wine_recommendations',
@@ -282,8 +297,8 @@ Bun.serve({
 
           return new Response(JSON.stringify({
             success: true,
-            wines,
-            count: wines.length
+            wines: simplifiedWines,
+            count: simplifiedWines.length
           }), {
             headers: {
               "Content-Type": "application/json",
