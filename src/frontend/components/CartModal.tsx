@@ -6,9 +6,13 @@ import { useKioskState } from '../hooks/useKioskState'
 interface CartModalProps {
   isOpen: boolean
   onClose: () => void
+  viewMode: 'desktop' | 'mobile'
 }
 
-export default function CartModal({ isOpen, onClose }: CartModalProps) {
+export default function CartModal({ isOpen, onClose, viewMode }: CartModalProps) {
+  const responsive = (mobileClass: string, desktopClass: string) => {
+    return viewMode === 'mobile' ? mobileClass : desktopClass
+  }
   const { cart, removeFromCart } = useKioskState()
   const [comparisonSlots, setComparisonSlots] = React.useState<[Wine | null, Wine | null]>([null, null])
 
@@ -47,12 +51,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-8"
+      className={`fixed inset-0 z-50 flex items-center justify-center ${responsive('p-0', 'p-8')}`}
       style={{ backdropFilter: 'blur(10px)', backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
       onClick={onClose}
     >
       <div
-        className="rounded-none md:rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md w-full h-full md:w-[900px] md:max-h-[calc(100vh-64px)]"
+        className={`${responsive('rounded-none w-full h-full', 'rounded-2xl w-[900px] max-h-[calc(100vh-64px)]')} shadow-2xl overflow-hidden backdrop-blur-md`}
         style={{
           background: 'linear-gradient(135deg, rgba(245, 235, 224, 0.75) 0%, rgba(232, 220, 200, 0.75) 50%, rgba(225, 210, 190, 0.75) 100%)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)'
@@ -60,8 +64,8 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="relative p-4 md:p-6 pb-2 md:pb-3">
-          <h2 className="text-2xl md:text-4xl font-bold text-center font-bodoni text-[#3d2618]">
+        <div className={`relative ${responsive('p-4 pb-2', 'p-6 pb-3')}`}>
+          <h2 className={`${responsive('text-2xl', 'text-4xl')} font-bold text-center font-bodoni text-[#3d2618]`}>
             Wine Cart
           </h2>
           <button
@@ -77,11 +81,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
         <div className="h-full overflow-y-auto pb-32" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           {/* 비교 영역 */}
-          <div className="px-4 md:px-6 pt-2 pb-4 md:pb-6 relative">
+          <div className={`${responsive('px-4 pt-2 pb-4', 'px-6 pt-2 pb-6')} relative`}>
             {/* 방사형 그래프 - 두 와인이 모두 선택되었을 때만 표시 */}
             {comparisonSlots[0] && comparisonSlots[1] && (
-              <div className="absolute left-1/2 top-12 md:top-20 transform -translate-x-1/2 z-50 pointer-events-none">
-                <svg width="180" height="180" viewBox="0 0 300 300" className="mx-auto drop-shadow-lg md:w-[220px] md:h-[220px]">
+              <div className={`absolute left-1/2 ${responsive('top-12', 'top-20')} transform -translate-x-1/2 z-50 pointer-events-none`}>
+                <svg width={viewMode === 'mobile' ? 180 : 220} height={viewMode === 'mobile' ? 180 : 220} viewBox="0 0 300 300" className="mx-auto drop-shadow-lg">
                   {/* 방사형 그라데이션 정의 */}
                   <defs>
                     <radialGradient id="leftWineGradient" cx="50%" cy="50%" r="50%">
@@ -230,7 +234,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className={`grid ${responsive('grid-cols-1 gap-4', 'grid-cols-2 gap-6')}`}>
               {[0, 1].map((index) => {
                 const wine = comparisonSlots[index as 0 | 1]
                 return (
@@ -393,13 +397,13 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
           </div>
 
           {/* 장바구니 와인 목록 */}
-          <div className="px-4 md:px-8 pb-6 md:pb-8">
-            <h3 className="text-xl md:text-2xl font-bold text-[#3d2618] mb-4 md:mb-6 font-bodoni">Cart Items</h3>
-            <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4">
+          <div className={`${responsive('px-4 pb-6', 'px-8 pb-8')}`}>
+            <h3 className={`${responsive('text-xl mb-4', 'text-2xl mb-6')} font-bold text-[#3d2618] font-bodoni`}>Cart Items</h3>
+            <div className={`flex ${responsive('gap-3', 'gap-4')} overflow-x-auto pb-4`}>
               {cart.map((wine) => (
                 <div
                   key={wine.id}
-                  className="flex-shrink-0 cursor-pointer w-[150px] md:w-[200px]"
+                  className={`flex-shrink-0 cursor-pointer ${responsive('w-[150px]', 'w-[200px]')}`}
                   onClick={() => handleWineClick(wine)}
                 >
                   {/* 와인 이미지 박스 */}

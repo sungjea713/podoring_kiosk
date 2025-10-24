@@ -5,6 +5,7 @@ import type { Wine } from '../../types'
 interface Props {
   wine: Wine
   onClose: () => void
+  viewMode: 'desktop' | 'mobile'
 }
 
 // 국가명에 따른 국기 이모지 매핑
@@ -25,7 +26,10 @@ const getCountryFlag = (country: string): string => {
   return flagMap[country] || '🌍'
 }
 
-export default function WineDetailModal({ wine, onClose }: Props) {
+export default function WineDetailModal({ wine, onClose, viewMode }: Props) {
+  const responsive = (mobileClass: string, desktopClass: string) => {
+    return viewMode === 'mobile' ? mobileClass : desktopClass
+  }
   // Location 정보 조합 (국가 제외)
   const locationParts = [
     wine.province,
@@ -36,11 +40,11 @@ export default function WineDetailModal({ wine, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-0 md:p-4"
+      className={`fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] ${responsive('p-0', 'p-4')}`}
       onClick={onClose}
     >
       <div
-        className="bg-[#f5f0e8] rounded-none md:rounded-lg shadow-2xl relative overflow-y-auto w-full h-full md:w-[900px] md:h-[1600px] md:max-h-[90vh]"
+        className={`bg-[#f5f0e8] ${responsive('rounded-none w-full h-full', 'rounded-lg w-[900px] h-[1600px] max-h-[90vh]')} shadow-2xl relative overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -52,16 +56,16 @@ export default function WineDetailModal({ wine, onClose }: Props) {
         </button>
 
         {/* Content */}
-        <div className="p-4 md:p-8">
+        <div className={responsive('p-4', 'p-8')}>
           {/* Wine Title - 독립 배치 */}
-          <h1 className="text-2xl md:text-4xl font-bold text-[#3d2618] mb-4 md:mb-6 font-bodoni">
+          <h1 className={`${responsive('text-2xl mb-4', 'text-4xl mb-6')} font-bold text-[#3d2618] font-bodoni`}>
             {wine.title}
           </h1>
 
-          <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-6 md:mb-8">
+          <div className={`flex ${responsive('flex-col gap-4 mb-6', 'flex-row gap-8 mb-8')}`}>
             {/* Wine Image - 좌측 상단 */}
-            <div className="flex-shrink-0 mx-auto md:mx-0">
-              <div className="w-64 h-64 md:w-80 md:h-80 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-md relative">
+            <div className={`flex-shrink-0 ${responsive('mx-auto', 'mx-0')}`}>
+              <div className={`${responsive('w-64 h-64', 'w-80 h-80')} bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-md relative`}>
                 {wine.image ? (
                   <img
                     src={wine.image}
@@ -202,14 +206,14 @@ export default function WineDetailModal({ wine, onClose }: Props) {
             wine.body !== undefined ||
             wine.alcohol !== undefined ||
             wine.cost_effectiveness !== undefined) && (
-            <div className="mb-6 md:mb-8">
-              <h2 className="text-xl md:text-2xl font-bold text-[#3d2618] mb-3 md:mb-4 font-bodoni">
+            <div className={responsive('mb-6', 'mb-8')}>
+              <h2 className={`${responsive('text-xl mb-3', 'text-2xl mb-4')} font-bold text-[#3d2618] font-bodoni`}>
                 Wine Profile
               </h2>
-              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+              <div className={`flex ${responsive('flex-col gap-4', 'flex-row gap-6')}`}>
                 {/* 좌측 - 5각 방사형 그래프 */}
                 <div className="flex-shrink-0">
-                  <svg width="280" height="280" viewBox="0 0 320 320" className="mx-auto md:w-[320px] md:h-[320px]">
+                  <svg width={viewMode === 'mobile' ? 280 : 320} height={viewMode === 'mobile' ? 280 : 320} viewBox="0 0 320 320" className="mx-auto">
                     {/* 방사형 그라데이션 정의 */}
                     <defs>
                       <radialGradient id="wineGradient" cx="50%" cy="50%" r="50%">

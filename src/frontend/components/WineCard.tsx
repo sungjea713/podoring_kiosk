@@ -30,7 +30,7 @@ export default function WineCard({ wine }: Props) {
   const [showModal, setShowModal] = React.useState(false)
   const [flyingCard, setFlyingCard] = React.useState<{ x: number; y: number; width: number; height: number } | null>(null)
   const cardRef = React.useRef<HTMLDivElement>(null)
-  const { addToCart } = useKioskState()
+  const { addToCart, viewMode } = useKioskState()
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -213,7 +213,7 @@ export default function WineCard({ wine }: Props) {
 
     {/* Wine Detail Modal */}
     {showModal && (
-      <WineDetailModal wine={wine} onClose={() => setShowModal(false)} />
+      <WineDetailModal wine={wine} onClose={() => setShowModal(false)} viewMode={viewMode} />
     )}
 
     {flyingCard && (

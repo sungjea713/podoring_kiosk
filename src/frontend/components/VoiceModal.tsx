@@ -8,6 +8,7 @@ import WineDetailModal from './WineDetailModal'
 interface VoiceModalProps {
   isOpen: boolean
   onClose: () => void
+  viewMode: 'desktop' | 'mobile'
 }
 
 interface FloatingPhrase {
@@ -20,7 +21,10 @@ interface FloatingPhrase {
   opacity: number
 }
 
-export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
+export default function VoiceModal({ isOpen, onClose, viewMode }: VoiceModalProps) {
+  const responsive = (mobileClass: string, desktopClass: string) => {
+    return viewMode === 'mobile' ? mobileClass : desktopClass
+  }
   const [phrases, setPhrases] = React.useState<FloatingPhrase[]>([])
   const [screenHeight, setScreenHeight] = React.useState(window.innerHeight)
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth)
@@ -466,11 +470,11 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-12">
           {/* Title - Always visible */}
           {recommendedWines.length === 0 && (
-            <div className="text-center mb-8 md:mb-12 px-4">
-              <h1 className="text-white text-4xl md:text-7xl font-cormorant font-bold mb-3 md:mb-4">
+            <div className={`text-center ${responsive('mb-8 px-4', 'mb-12 px-4')}`}>
+              <h1 className={`text-white ${responsive('text-4xl mb-3', 'text-7xl mb-4')} font-cormorant font-bold`}>
                 Voice Assistant
               </h1>
-              <p className="text-white text-xl md:text-3xl font-cormorant opacity-80">
+              <p className={`text-white ${responsive('text-xl', 'text-3xl')} font-cormorant opacity-80`}>
                 Say something to start
               </p>
             </div>
@@ -478,7 +482,7 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
 
           {/* Recommended Wines Cards */}
           {recommendedWines.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8 max-w-6xl px-4 md:px-0">
+            <div className={`grid ${responsive('grid-cols-1 gap-4 mt-6 px-4', 'grid-cols-3 gap-6 mt-8')} max-w-6xl`}>
               {recommendedWines.map((wine) => (
                 <div
                   key={wine.id}
@@ -636,6 +640,7 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           <WineDetailModal
             wine={selectedWine}
             onClose={() => setSelectedWine(null)}
+            viewMode={viewMode}
           />
         )}
       </div>

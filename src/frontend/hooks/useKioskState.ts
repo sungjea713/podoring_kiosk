@@ -10,6 +10,10 @@ interface KioskState {
   lastActivity: number
   updateActivity: () => void
 
+  // 뷰 모드 (desktop: 키오스크/데스크탑, mobile: 모바일)
+  viewMode: 'desktop' | 'mobile'
+  setViewMode: (mode: 'desktop' | 'mobile') => void
+
   // 필터 상태
   filters: {
     type: string
@@ -36,6 +40,9 @@ export const useKioskState = create<KioskState>((set) => ({
 
   lastActivity: Date.now(),
   updateActivity: () => set({ lastActivity: Date.now() }),
+
+  viewMode: 'desktop', // 기본값: 데스크탑 모드 (키오스크)
+  setViewMode: (mode) => set({ viewMode: mode }),
 
   filters: {
     type: 'all',
