@@ -518,9 +518,18 @@ Bun.serve({
           }
 
           // 3. Cohere로 재랭킹 (의미적 관련성 보정)
-          const wines = await rerankWines(query, candidates, limit)
+          // 단, 정렬 조건이 있으면 SQL 정렬 결과 그대로 사용
+          let wines
+          if (conditions.sortBy) {
+            // 정렬 조건이 있으면 리랭킹 건너뛰고 상위 N개만 선택
+            wines = candidates.slice(0, limit)
+            console.log(`✓ Sorted ${wines.length} wines (skipped reranking due to sortBy):`)
+          } else {
+            // 정렬 조건이 없으면 Cohere 리랭킹 수행
+            wines = await rerankWines(query, candidates, limit)
+            console.log(`✓ Reranked to ${wines.length} wines:`)
+          }
 
-          console.log(`✓ Reranked to ${wines.length} wines:`)
           wines.forEach((wine, index) => {
             console.log(`  ${index + 1}. ${wine.title} ${wine.vintage || ''} | ${wine.country} | ₩${wine.price.toLocaleString('ko-KR')} | ${wine.points}⭐`)
           })
