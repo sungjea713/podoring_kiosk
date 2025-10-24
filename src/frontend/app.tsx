@@ -353,13 +353,13 @@ function App() {
         {/* Floating Voice Assistant Button */}
         <button
           onClick={() => setIsVoiceOpen(true)}
-          className="fixed bottom-32 left-8 w-40 h-40 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 animate-pulse-strong"
+          className="fixed bottom-32 left-8 w-20 h-20 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 animate-pulse-strong"
           style={{
             background: 'linear-gradient(135deg, #a89968 0%, #8a7850 100%)',
             boxShadow: '0 8px 32px rgba(168, 153, 104, 0.6), 0 0 20px rgba(168, 153, 104, 0.3)'
           }}
         >
-          <Mic className="w-24 h-24" />
+          <Mic className="w-12 h-12" />
         </button>
         <style>{`
           @keyframes pulse-strong {
@@ -382,14 +382,14 @@ function App() {
         {/* Floating Cart Button */}
         <button
           onClick={() => setIsCartOpen(true)}
-          className="fixed bottom-32 right-8 w-40 h-40 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 cart-button-gradient"
+          className="fixed bottom-32 right-8 w-20 h-20 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 cart-button-gradient"
           style={{
             boxShadow: '0 8px 32px rgba(196, 30, 58, 0.6), 0 0 20px rgba(255, 215, 0, 0.3)'
           }}
         >
-          <ShoppingCart className="w-24 h-24" />
+          <ShoppingCart className="w-12 h-12" />
           {cart.length > 0 && (
-            <span className="absolute -top-2 -right-2 bg-gradient-to-br from-[#ffd700] to-[#ffed4e] text-[#1C0E10] text-lg w-12 h-12 rounded-full flex items-center justify-center shadow-lg font-bold">
+            <span className="absolute -top-1 -right-1 bg-gradient-to-br from-[#ffd700] to-[#ffed4e] text-[#1C0E10] text-sm w-8 h-8 rounded-full flex items-center justify-center shadow-lg font-bold">
               +{cart.length}
             </span>
           )}
