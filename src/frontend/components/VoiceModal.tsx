@@ -27,10 +27,16 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
   const [recommendedWines, setRecommendedWines] = React.useState<Wine[]>([])
   const [flyingCards, setFlyingCards] = React.useState<Map<number, { x: number; y: number; width: number; height: number; wine: Wine }>>(new Map())
   const [selectedWine, setSelectedWine] = React.useState<Wine | null>(null)
+  const [isRecording, setIsRecording] = React.useState(false)
+  const [recordingDuration, setRecordingDuration] = React.useState(0)
 
   const conversationRef = React.useRef<Conversation | null>(null)
   const eventSourceRef = React.useRef<EventSource | null>(null)
   const cardRefs = React.useRef<Map<number, HTMLDivElement>>(new Map())
+  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
+  const audioChunksRef = React.useRef<Blob[]>([])
+  const audioStreamRef = React.useRef<MediaStream | null>(null)
+  const recordingStartTimeRef = React.useRef<number | null>(null)
   const { addToCart } = useKioskState()
 
   // 화면 크기 감지
@@ -211,16 +217,137 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
     }
   }
 
+  // 음성 녹음 시작
+  const startRecording = async () => {
+    try {
+      console.log('🎙️ Requesting microphone access for recording...')
+
+      // 마이크 접근 권한 요청
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        }
+      })
+
+      audioStreamRef.current = stream
+      audioChunksRef.current = []
+
+      // MediaRecorder 생성 (webm 포맷)
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm'
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
+
+      // 데이터 수집
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+          console.log(`📦 Audio chunk received: ${event.data.size} bytes`)
+        }
+      }
+
+      // 녹음 시작
+      mediaRecorder.start(1000) // 1초마다 chunk 생성
+      mediaRecorderRef.current = mediaRecorder
+      recordingStartTimeRef.current = Date.now()
+      setIsRecording(true)
+
+      console.log('✅ Recording started')
+    } catch (error) {
+      console.error('❌ Failed to start recording:', error)
+      alert('마이크 접근 권한이 필요합니다. 브라우저 설정에서 마이크를 허용해주세요.')
+    }
+  }
+
+  // 음성 녹음 중지 및 자동 다운로드
+  const stopRecording = () => {
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
+      return
+    }
+
+    console.log('🛑 Stopping recording...')
+
+    const mediaRecorder = mediaRecorderRef.current
+
+    // 녹음 중지 이벤트 처리
+    mediaRecorder.onstop = () => {
+      console.log(`📦 Total chunks: ${audioChunksRef.current.length}`)
+
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+      const totalSize = audioBlob.size
+      const durationSec = recordingStartTimeRef.current
+        ? Math.round((Date.now() - recordingStartTimeRef.current) / 1000)
+        : 0
+
+      console.log(`✅ Recording complete: ${totalSize} bytes, ${durationSec}s`)
+
+      // 자동 다운로드
+      if (totalSize > 0) {
+        const url = URL.createObjectURL(audioBlob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `voice-recording-${Date.now()}.webm`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        console.log('💾 Recording downloaded automatically')
+      } else {
+        console.warn('⚠️ Recording is empty, skipping download')
+      }
+
+      // 리소스 정리
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop())
+        audioStreamRef.current = null
+      }
+
+      audioChunksRef.current = []
+      mediaRecorderRef.current = null
+      recordingStartTimeRef.current = null
+      setIsRecording(false)
+      setRecordingDuration(0)
+    }
+
+    mediaRecorder.stop()
+  }
+
   // 모달 열릴 때 자동으로 연결, 닫을 때 연결 종료
   React.useEffect(() => {
     if (isOpen && !conversationRef.current) {
       // 모달 열릴 때 자동 연결
       connectToAssistant()
+      // 녹음 시작 (일시적으로 비활성화)
+      // startRecording()
     } else if (!isOpen && conversationRef.current) {
       // 모달 닫힐 때 연결 종료
       disconnect()
+      // 녹음 중지 및 다운로드 (일시적으로 비활성화)
+      // stopRecording()
+    }
+
+    // cleanup
+    return () => {
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop())
+      }
     }
   }, [isOpen])
+
+  // 녹음 시간 타이머 업데이트
+  React.useEffect(() => {
+    if (!isRecording || !recordingStartTimeRef.current) return
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - recordingStartTimeRef.current!) / 1000)
+      setRecordingDuration(elapsed)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [isRecording])
 
   // 장바구니에 추가
   const handleAddToCart = (wine: Wine) => {
@@ -314,6 +441,16 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
           `
         }} />
 
+        {/* Recording indicator (일시적으로 비활성화) */}
+        {/* {isRecording && (
+          <div className="absolute top-8 left-8 flex items-center gap-3 bg-red-500/90 backdrop-blur-md px-4 py-2 rounded-full z-[200]">
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+            <span className="text-white font-semibold text-sm">
+              Recording {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+            </span>
+          </div>
+        )} */}
+
         {/* Close button */}
         <button
           onClick={(e) => {
@@ -329,11 +466,11 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-12">
           {/* Title - Always visible */}
           {recommendedWines.length === 0 && (
-            <div className="text-center mb-12">
-              <h1 className="text-white text-7xl font-cormorant font-bold mb-4">
+            <div className="text-center mb-8 md:mb-12 px-4">
+              <h1 className="text-white text-4xl md:text-7xl font-cormorant font-bold mb-3 md:mb-4">
                 Voice Assistant
               </h1>
-              <p className="text-white text-3xl font-cormorant opacity-80">
+              <p className="text-white text-xl md:text-3xl font-cormorant opacity-80">
                 Say something to start
               </p>
             </div>
@@ -341,7 +478,7 @@ export default function VoiceModal({ isOpen, onClose }: VoiceModalProps) {
 
           {/* Recommended Wines Cards */}
           {recommendedWines.length > 0 && (
-            <div className="grid grid-cols-3 gap-6 mt-8 max-w-6xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8 max-w-6xl px-4 md:px-0">
               {recommendedWines.map((wine) => (
                 <div
                   key={wine.id}

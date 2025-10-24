@@ -137,37 +137,37 @@ function App() {
             background: 'linear-gradient(to right, transparent 0%, #c4a87a 20%, #c4a87a 80%, transparent 100%)'
           }} />
 
-          <div className="max-w-[1080px] mx-auto relative z-10">
+          <div className="max-w-full lg:max-w-[1080px] mx-auto relative z-10">
             {/* Logo */}
-            <div className="text-center py-6 mb-1">
-              <div className="flex justify-center mb-3">
+            <div className="text-center py-4 md:py-6 mb-1">
+              <div className="flex justify-center mb-2 md:mb-3">
                 <img
                   src="/img/logo.png"
                   alt="Podoring Logo"
-                  className="h-16 w-auto object-contain"
+                  className="h-12 md:h-16 w-auto object-contain"
                 />
               </div>
               <div className="flex justify-center mb-1">
                 <img
                   src="/img/FineWineSelection.png"
                   alt="Fine Wine Selection"
-                  className="h-16 w-auto object-contain"
+                  className="h-12 md:h-16 w-auto object-contain"
                 />
               </div>
-              <p className="header-subtitle-font text-sub-text text-lg">
+              <p className="header-subtitle-font text-sub-text text-sm md:text-lg">
                 Our finest choice, Affordable
               </p>
             </div>
 
             {/* Filters - 2:1 aspect ratio */}
-            <div className="px-6 pb-4">
-              <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-2">
+            <div className="px-4 md:px-6 pb-4">
+              <div className="scrollbar-hide flex gap-2 md:gap-3 overflow-x-auto pb-2">
                 {filters.map((filter) => (
                   <button
                     key={filter.id}
                     onClick={() => handleFilterClick(filter)}
                     className={`
-                      flex-shrink-0 rounded-lg transition-all w-44 h-20 flex items-center justify-center overflow-hidden relative
+                      flex-shrink-0 rounded-lg transition-all w-36 h-16 md:w-44 md:h-20 flex items-center justify-center overflow-hidden relative
                       ${isFilterActive(filter)
                         ? 'border-2 border-gold'
                         : 'border-none'
@@ -240,7 +240,7 @@ function App() {
                       } : {}
                     }
                   >
-                    <span className={`uppercase tracking-wider text-xl font-bold leading-tight text-center px-3 relative z-10 font-bodoni ${
+                    <span className={`uppercase tracking-wider text-base md:text-xl font-bold leading-tight text-center px-2 md:px-3 relative z-10 font-bodoni ${
                       filter.id === 'all' || filter.id === 'Red wine' || filter.id === 'White wine' || filter.id === 'Cabernet Sauvignon' || filter.id === 'Pinot Noir' || filter.id === 'Sauvignon Blanc' || filter.id === 'Chardonnay' || filter.id === 'France' || filter.id === 'Italy' || filter.id === 'Spain' || filter.id === 'United States' || filter.id === 'Chile' ? (isFilterActive(filter) ? 'text-[#8b6f47]' : 'text-white drop-shadow-lg') : isFilterActive(filter) ? 'text-[#8b6f47]' : 'text-header-text'
                     }`} style={isFilterActive(filter) ? {
                       WebkitTextStroke: '1px white',
@@ -256,8 +256,8 @@ function App() {
         </header>
 
         {/* Main */}
-        <main className="pt-[380px] pb-[160px] px-6">
-          <div className="max-w-[1080px] mx-auto">
+        <main className="pt-[380px] pb-[120px] md:pb-[160px] px-4 md:px-6">
+          <div className="max-w-full lg:max-w-[1080px] mx-auto">
             {isLoading ? (
               <div className="text-center text-header-text text-xl py-20 font-cormorant">
                 Loading wine list...
@@ -267,7 +267,7 @@ function App() {
                 와인이 없습니다
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {wines.map((wine) => (
                   <WineCard
                     key={wine.id}
@@ -282,18 +282,18 @@ function App() {
         {/* Footer - Price Range Slider */}
         {priceRange && maxPrice && (
           <footer className="fixed bottom-0 left-0 right-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] z-40 backdrop-blur-sm" style={{ backgroundColor: 'rgba(47, 22, 26, 0.7)' }}>
-            <div className="max-w-[1080px] mx-auto px-6 py-6">
+            <div className="max-w-full lg:max-w-[1080px] mx-auto px-4 md:px-6 py-4 md:py-6">
               <div className="font-bodoni">
                 {/* Price Labels */}
-                <div className="relative mb-4 h-6">
+                <div className="relative mb-3 md:mb-4 h-5 md:h-6">
                   <div
-                    className="absolute transform -translate-x-1/2 text-white text-base font-medium whitespace-nowrap"
+                    className="absolute transform -translate-x-1/2 text-white text-xs md:text-base font-medium whitespace-nowrap"
                     style={{ left: `${(priceRange[0] / maxPrice) * 100}%` }}
                   >
                     ₩{priceRange[0].toLocaleString()}
                   </div>
                   <div
-                    className="absolute transform -translate-x-1/2 text-white text-base font-medium whitespace-nowrap"
+                    className="absolute transform -translate-x-1/2 text-white text-xs md:text-base font-medium whitespace-nowrap"
                     style={{ left: `${(priceRange[1] / maxPrice) * 100}%` }}
                   >
                     ₩{priceRange[1].toLocaleString()}
@@ -353,13 +353,13 @@ function App() {
         {/* Floating Voice Assistant Button */}
         <button
           onClick={() => setIsVoiceOpen(true)}
-          className="fixed bottom-32 left-8 w-24 h-24 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 animate-pulse-strong"
+          className="fixed bottom-20 md:bottom-32 left-4 md:left-8 w-16 h-16 md:w-24 md:h-24 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 animate-pulse-strong"
           style={{
             background: 'linear-gradient(135deg, #a89968 0%, #8a7850 100%)',
             boxShadow: '0 8px 32px rgba(168, 153, 104, 0.6), 0 0 20px rgba(168, 153, 104, 0.3)'
           }}
         >
-          <Mic className="w-14 h-14" />
+          <Mic className="w-9 h-9 md:w-14 md:h-14" />
         </button>
         <style>{`
           @keyframes pulse-strong {
@@ -382,14 +382,14 @@ function App() {
         {/* Floating Cart Button */}
         <button
           onClick={() => setIsCartOpen(true)}
-          className="fixed bottom-32 right-8 w-24 h-24 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 cart-button-gradient"
+          className="fixed bottom-20 md:bottom-32 right-4 md:right-8 w-16 h-16 md:w-24 md:h-24 text-white rounded-full transition-all flex items-center justify-center z-50 hover:scale-110 cart-button-gradient"
           style={{
             boxShadow: '0 8px 32px rgba(196, 30, 58, 0.6), 0 0 20px rgba(255, 215, 0, 0.3)'
           }}
         >
-          <ShoppingCart className="w-14 h-14" />
+          <ShoppingCart className="w-9 h-9 md:w-14 md:h-14" />
           {cart.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-gradient-to-br from-[#ffd700] to-[#ffed4e] text-[#1C0E10] text-base w-9 h-9 rounded-full flex items-center justify-center shadow-lg font-bold">
+            <span className="absolute -top-1 -right-1 bg-gradient-to-br from-[#ffd700] to-[#ffed4e] text-[#1C0E10] text-xs md:text-base w-6 h-6 md:w-9 md:h-9 rounded-full flex items-center justify-center shadow-lg font-bold">
               +{cart.length}
             </span>
           )}
