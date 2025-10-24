@@ -79,13 +79,17 @@ export function parseQuery(query: string): QueryConditions {
 
   // ===== 와인 타입 파싱 =====
 
-  if (lowerQuery.includes('레드') || lowerQuery.includes('red') || lowerQuery.includes('빨간') || lowerQuery.includes('적포도주')) {
+  if (lowerQuery.includes('레드') || lowerQuery.includes('red') || lowerQuery.includes('빨간') ||
+      lowerQuery.includes('적포도주') || lowerQuery.includes('red wine')) {
     conditions.type = 'Red wine'
-  } else if (lowerQuery.includes('화이트') || lowerQuery.includes('white') || lowerQuery.includes('흰') || lowerQuery.includes('백포도주')) {
+  } else if (lowerQuery.includes('화이트') || lowerQuery.includes('white') || lowerQuery.includes('흰') ||
+             lowerQuery.includes('백포도주') || lowerQuery.includes('white wine')) {
     conditions.type = 'White wine'
-  } else if (lowerQuery.includes('스파클링') || lowerQuery.includes('샴페인') || lowerQuery.includes('sparkling') || lowerQuery.includes('스파클')) {
+  } else if (lowerQuery.includes('스파클링') || lowerQuery.includes('샴페인') || lowerQuery.includes('sparkling') ||
+             lowerQuery.includes('스파클') || lowerQuery.includes('champagne') || lowerQuery.includes('prosecco')) {
     conditions.type = 'Sparkling wine'
-  } else if (lowerQuery.includes('로제') || lowerQuery.includes('rosé') || lowerQuery.includes('rose')) {
+  } else if (lowerQuery.includes('로제') || lowerQuery.includes('rosé') || lowerQuery.includes('rose') ||
+             lowerQuery.includes('rosé wine')) {
     conditions.type = 'Rosé wine'
   }
 
@@ -209,19 +213,40 @@ export function parseQuery(query: string): QueryConditions {
 
   // ===== 정렬 파싱 =====
 
-  if (lowerQuery.includes('가장 비싼') || lowerQuery.includes('최고가') || lowerQuery.includes('고가')) {
+  // 가장 비싼 / 고가 와인
+  if (lowerQuery.includes('가장 비싼') || lowerQuery.includes('최고가') || lowerQuery.includes('고가') ||
+      lowerQuery.includes('비싼 와인') || lowerQuery.includes('most expensive') ||
+      lowerQuery.includes('expensive wine') || lowerQuery.includes('high-end') ||
+      lowerQuery.includes('premium wine') || lowerQuery.includes('pricey')) {
     conditions.sortBy = 'price'
     conditions.sortOrder = 'desc'
-  } else if (lowerQuery.includes('가장 싼') || lowerQuery.includes('저렴한') || lowerQuery.includes('최저가') || lowerQuery.includes('싼')) {
+  }
+  // 가장 싼 / 저렴한 와인
+  else if (lowerQuery.includes('가장 싼') || lowerQuery.includes('저렴한') || lowerQuery.includes('최저가') ||
+           lowerQuery.includes('싼') || lowerQuery.includes('cheapest') ||
+           lowerQuery.includes('affordable') || lowerQuery.includes('budget') ||
+           lowerQuery.includes('inexpensive') || lowerQuery.includes('low-cost')) {
     conditions.sortBy = 'price'
     conditions.sortOrder = 'asc'
-  } else if (lowerQuery.includes('평점 높은') || lowerQuery.includes('최고 평점') || lowerQuery.includes('고평점')) {
+  }
+  // 평점 높은 와인
+  else if (lowerQuery.includes('평점 높은') || lowerQuery.includes('최고 평점') || lowerQuery.includes('고평점') ||
+           lowerQuery.includes('highest rated') || lowerQuery.includes('top rated') ||
+           lowerQuery.includes('best rated') || lowerQuery.includes('high rating')) {
     conditions.sortBy = 'points'
     conditions.sortOrder = 'desc'
-  } else if (lowerQuery.includes('도수 높은') || lowerQuery.includes('알코올 높은')) {
+  }
+  // 알코올 도수 높은 와인
+  else if (lowerQuery.includes('도수 높은') || lowerQuery.includes('알코올 높은') ||
+           lowerQuery.includes('high alcohol') || lowerQuery.includes('strong') ||
+           lowerQuery.includes('high abv')) {
     conditions.sortBy = 'abv'
     conditions.sortOrder = 'desc'
-  } else if (lowerQuery.includes('도수 낮은') || lowerQuery.includes('알코올 낮은')) {
+  }
+  // 알코올 도수 낮은 와인
+  else if (lowerQuery.includes('도수 낮은') || lowerQuery.includes('알코올 낮은') ||
+           lowerQuery.includes('low alcohol') || lowerQuery.includes('light') ||
+           lowerQuery.includes('low abv')) {
     conditions.sortBy = 'abv'
     conditions.sortOrder = 'asc'
   }
