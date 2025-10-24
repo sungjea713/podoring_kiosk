@@ -9,10 +9,14 @@ A modern, AI-powered wine recommendation kiosk built with Bun, React, and Eleven
 - **Real-time SSE Updates**: Wine cards appear instantly as the AI agent searches
 - **Multilingual Support**: Example phrases in 14+ languages
 - **Animated Background**: Physics-based floating text with ambient color transitions
+- **Voice Recording** (🚧 Temporarily Disabled): MediaRecorder API for capturing user audio sessions
 
 ### 🍷 Wine Catalog
 - **Smart Search & Filtering**: Search by name, filter by type, country, variety, price range
-- **Semantic Search**: AI-powered wine recommendations using OpenAI embeddings + Cohere reranking
+- **Hybrid Semantic Search**: Advanced AI-powered search combining query parsing, SQL filtering, and semantic reranking
+  - **50% faster** than pure vector search (0.4s vs 0.9s average)
+  - **100% accuracy** on numerical queries (price, ratings, attributes)
+  - Automatic fallback to semantic search for descriptive queries
 - **Detailed Wine Information**: Ratings, descriptions, tasting notes, food pairings
 - **Inventory Management**: Real-time stock tracking
 
@@ -29,9 +33,10 @@ A modern, AI-powered wine recommendation kiosk built with Bun, React, and Eleven
 - **Server**: Bun.serve with built-in routing
 - **Database**: Supabase (PostgreSQL + pgvector)
 - **AI/ML**:
-  - OpenAI GPT-4 for embeddings
+  - OpenAI text-embedding-3-small for embeddings
   - Cohere for semantic reranking
   - ElevenLabs Conversational AI
+  - Gemini 2.5 Flash for LLM-based recommendations (optional)
 
 ### Frontend
 - **Framework**: React 18 with TypeScript
@@ -102,7 +107,9 @@ podoring_kiosk/
 │   │   ├── embeddings.ts # OpenAI embedding generation
 │   │   ├── rerank.ts     # Cohere reranking
 │   │   ├── wines.ts      # Wine data access
-│   │   └── inventory.ts  # Inventory management
+│   │   ├── inventory.ts  # Inventory management
+│   │   ├── queryParser.ts   # Natural language query parsing (NEW)
+│   │   └── filterWines.ts   # SQL filtering for hybrid search (NEW)
 │   ├── db/
 │   │   └── supabase.ts   # Supabase client
 │   ├── frontend/
@@ -119,7 +126,8 @@ podoring_kiosk/
 │   └── index.ts          # Server entry point
 ├── package.json
 ├── tsconfig.json
-└── tailwind.config.js
+├── tailwind.config.js
+└── SEARCH_API_COMPARISON.md  # Performance analysis (NEW)
 ```
 
 ## Key Features Explained
@@ -140,18 +148,53 @@ The voice assistant uses Server-Sent Events (SSE) to stream wine recommendations
 - Frontend SSE: [src/frontend/components/VoiceModal.tsx](src/frontend/components/VoiceModal.tsx)
 - Semantic Search: [src/index.ts](src/index.ts) - `/api/search/semantic`
 
-### Semantic Wine Search
+### Hybrid Semantic Wine Search
 
-Three-stage AI-powered search:
+Advanced multi-stage search combining query parsing, SQL filtering, and AI semantic search:
 
-1. **Embedding**: OpenAI converts user query to vector embedding
-2. **Vector Search**: Supabase pgvector finds similar wines (cosine similarity)
-3. **Reranking**: Cohere reranks results for better relevance
+#### Architecture
 
 ```typescript
-// Example query: "Red wine for steak dinner"
-// Returns: Cabernet Sauvignon, Malbec, Syrah with high scores
+User Query → Query Parser (NLP)
+           ↓
+      Has Conditions?
+      ↙           ↘
+    YES            NO
+     ↓              ↓
+ SQL Filter    Vector Search
+ (price, type,   (embeddings)
+  attributes)        ↓
+     ↓              ↓
+ Candidates ← ← ← ← ←
+     ↓
+ Cohere Rerank
+     ↓
+  Results
 ```
+
+#### Example Queries
+
+**Numerical queries** (parsed and filtered):
+- "5만원 이하 레드 와인" → SQL: `price ≤ 50000 AND type = 'Red wine'`
+- "가장 비싼 와인 3개" → SQL: `ORDER BY price DESC LIMIT 3`
+- "탄닌 낮은 프랑스 와인" → SQL: `tannin ≤ 2 AND country = 'France'`
+
+**Descriptive queries** (semantic search):
+- "Red wine for steak dinner" → Embeddings + Vector search
+- "스테이크와 어울리는 와인" → Embeddings + Vector search
+
+#### Performance
+
+See [SEARCH_API_COMPARISON.md](SEARCH_API_COMPARISON.md) for detailed performance analysis:
+- **50% faster** than pure vector search (0.443s vs 0.896s)
+- **100% accuracy** on numerical conditions
+- **69% cost reduction** (fewer API calls for reranking)
+
+#### Implementation Files
+
+- [src/api/queryParser.ts](src/api/queryParser.ts) - NLP query parsing (price, type, attributes, countries, sorting)
+- [src/api/filterWines.ts](src/api/filterWines.ts) - SQL filtering based on parsed conditions
+- [src/index.ts](src/index.ts) - `/api/search/semantic-hybrid` endpoint
 
 ### Cart Animations
 
@@ -202,10 +245,15 @@ Auto-deploys from `main` branch on GitHub.
 - `GET /api/wines/max-price` - Get maximum wine price
 - `GET /api/inventory/:wine_id` - Get wine inventory
 
+### Search Endpoints
+
+- `POST /api/search/semantic` - Pure semantic search (vector embeddings)
+- `POST /api/search/semantic-hybrid` - **Hybrid search** (query parsing + SQL + semantic)
+- `POST /api/search/llm` - LLM-based search using Gemini (experimental, 30x slower)
+
 ### Voice Assistant Endpoints
 
 - `GET /api/elevenlabs/config` - Get ElevenLabs Agent ID
-- `POST /api/search/semantic` - Semantic wine search (ElevenLabs webhook)
 - `GET /api/wine-recommendations/stream` - SSE stream for real-time updates
 
 ## Development
@@ -237,9 +285,113 @@ bun run lint
 
 This project is private and proprietary.
 
+## Voice Recording & Analytics (Temporarily Disabled)
+
+### Overview
+
+The voice assistant includes MediaRecorder API integration for capturing user audio during voice sessions. This feature is currently disabled but can be easily reactivated for future analytics.
+
+### Implementation Details
+
+**Location**: [src/frontend/components/VoiceModal.tsx](src/frontend/components/VoiceModal.tsx)
+
+**Features**:
+- Parallel recording alongside ElevenLabs RTC (independent microphone streams)
+- Automatic start when voice modal opens
+- Automatic stop and file generation when modal closes
+- WebM format with Opus codec
+- Recording duration timer
+- Visual recording indicator (red dot with timer)
+
+**Current Status**: 🚧 **Disabled**
+- Recording functions are commented out (lines 324, 329)
+- UI indicator is commented out (lines 445-452)
+- Code preserved for future reactivation
+
+### Planned Integration (Future)
+
+**Voice Analytics Server**: https://podoring-voice-analyzer.onrender.com
+
+**Database Tables** (Already created in Supabase):
+- `voice_sessions`: Session metadata + voice analysis results (gender, age group)
+- `voice_interactions`: User utterances and recommended wines
+- `voice_cart_actions`: Cart additions during voice sessions
+
+**Data Flow** (When reactivated):
+1. User opens voice modal → Recording starts
+2. User utterances tracked with timestamps
+3. Cart actions recorded with wine IDs
+4. Modal closes → Send to Python server:
+   - Session data (JSON)
+   - Audio file (WebM)
+5. Python server:
+   - Saves session/interaction/cart data to Supabase
+   - Analyzes audio (removes silence, detects gender/age)
+   - Updates session with analysis results
+6. Audio file discarded (not stored, only analysis results saved)
+
+### Reactivation Steps
+
+To enable voice recording:
+
+1. **Uncomment recording calls** in VoiceModal.tsx:
+   ```typescript
+   // Line 324: Uncomment
+   startRecording()
+
+   // Line 329: Uncomment
+   stopRecording()
+   ```
+
+2. **Uncomment UI indicator** (lines 445-452):
+   ```typescript
+   {isRecording && (
+     <div className="absolute top-8 left-8...">
+       Recording timer display
+     </div>
+   )}
+   ```
+
+3. **Modify stopRecording()** to send data to Python server instead of auto-download:
+   ```typescript
+   // Replace auto-download with API call
+   const formData = new FormData()
+   formData.append('session_data', JSON.stringify({...}))
+   formData.append('audio', audioBlob)
+
+   await fetch('https://podoring-voice-analyzer.onrender.com/api/analyze-session', {
+     method: 'POST',
+     body: formData
+   })
+   ```
+
+4. **Collect session data** during voice interaction:
+   - Track user utterances from ElevenLabs onMessage
+   - Track cart actions in handleAddToCart
+   - Track recommended wine IDs from SSE
+
+### Privacy Considerations
+
+- Audio files are **NOT stored** - only analyzed and discarded
+- Only gender, age group, and session metadata saved
+- Complies with minimal data retention principles
+- Session data can be anonymized
+
+### Testing Without Audio
+
+The Python server supports mock mode for testing without actual audio files:
+```bash
+curl -X POST "https://podoring-voice-analyzer.onrender.com/api/analyze-session" \
+  -F "session_data={...}" \
+  # No audio file = mock analysis results
+```
+
+---
+
 ## Acknowledgments
 
 - Built with [Bun](https://bun.sh)
 - Voice AI powered by [ElevenLabs](https://elevenlabs.io)
 - Vector search by [Supabase](https://supabase.com)
 - AI models by [OpenAI](https://openai.com) and [Cohere](https://cohere.ai)
+- Voice analysis by custom Python server (Flask/FastAPI)

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@11labs/client": "^0.2.0",
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.39.0",
     "@tanstack/react-query": "^5.17.0",
     "cohere-ai": "^7.19.0",
